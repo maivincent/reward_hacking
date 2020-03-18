@@ -1,0 +1,57 @@
+paths :
+  local : 
+    save_images : '../local_results/images/'
+    save_cnn : '../local_results/cnn/'
+    save_rl: '../local_results/rl'
+    images : '../local_results/images/'
+    cnn : '../local_results/cnn/'
+    rl: '../local_results/rl/'
+  transfer :
+    save_images : '../cluster_results/images/'
+    save_cnn : '../cluster_results/cnn/'
+    save_rl: '../cluster_results/rl'
+    images : '../cluster_results/images/'
+    cnn : '../cluster_results/cnn/'
+    rl: '../cluster_results/rl/'  
+  mila :
+    save_images : '/network/tmp1/maivince/images/'
+    save_cnn : '/network/tmp1/maivince/cnn/'
+    save_rl : '/network/tmp1/maivince/rl/'
+    images : 'images/'
+    cnn : 'cnn/'
+    rl : 'rl/'
+
+
+image :
+  height : 400
+  width : 600
+
+exp:
+  nb_test_im : 10000
+  nb_train_im : 10000
+
+cnn:
+  reshape_size : [32, 32]
+  nb_epochs : 20
+  batch_size : 16
+  shuffle : True
+  learning_rate : 0.0003
+
+rl:
+  num_episodes : 800                # maximum number of episodes
+  max_steps_episode : 2000          # maximum steps in one episode
+  policy : "Gaussian"               # algorithm to use: Gaussian | Deterministic
+  eval_ : True                      # evaluates a policy a policy every 10 episode
+  gamma : 0.99                      # discount factor for reward 
+  tau : 0.005                       # target smoothing coefficient(τ)
+  lr : 0.0003                       # learning rate 
+  alpha : 0.2                       # temperature parameter α determines the relative importance of the entropy term against the reward
+  automatic_entropy_tuning : True   # temperature parameter α automaically adjusted.
+  seed : 456                        # random seed 
+  batch_size : 256                  # batch size
+  hidden_size : 256                 # hidden size
+  updates_per_step : 1              # model updates per simulator step
+  start_steps : 10000               # steps sampling random actions
+  target_update_interval : 1        # value target update per no. of updates per step 
+  replay_size : 1000000             # size of replay buffer
+  cuda : True                       # run on CUDA
