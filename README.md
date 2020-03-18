@@ -15,7 +15,17 @@ git submodule update
 Conda environment:
 ```
 conda env create -f environment.yml 
+```
+There will be some error with the gym-duckietown package. It's ok.
+Activate the environment:
+```
 conda activate rew_est
+```
+or ```source activate rew_est```
+And then:
+```
+cd gym-duckietown
+pip install -e .
 ```
 
 There may be some problems with `pyglet` (still have not figured out how to set it up correctly automatically).
@@ -23,6 +33,11 @@ You need to backtrack the installation to version 1.3.2:
 ```
 pip3 uninstall pyglet
 pip3 install --user pyglet==1.3.2
+```
+Finally, you will need to downgrade your `torchvision` version to avoid a `Pillow` error.
+```
+pip uninstall torchvision
+pip install torchvision==0.3.0
 ```
 
 ### Username (for computations on the Mila cluster)
@@ -135,13 +150,23 @@ You can also, for some scripts, run with the `-c transfer` option. This is when 
 
 ## Troubleshooting
 
+
+### Installation errors
+#### Pyglet
  If you get this error:
  ```
  AttributeError: 'ImageData' object has no attribute 'data'
  ```
  It's probably because you have not backtracked `pyglet` correctly. Refer to the **Installation** instructions to do so.
 
-
- When using on a cluster, you will need a virtual screen. In your scripts, use XVFB:
+#### Torchvision
+ If you get this error:
+ ```
+ ImportError: cannot import name 'PILLOW_VERSION'
+ ```
+ It's probably because your have not backtracked `torchvision` to the 0.3.0 version. See the **Installation** instructions.
  
- `xvfb-run -a -s "-screen 0 1400x900x24" python YOUR_SCRIPT.py -A YOUR_ARGUMENT ... ` 
+ 
+ ### Screen
+ When using through `ssh`, you will need a virtual screen. In your scripts, use XVFB:
+  `xvfb-run -a -s "-screen 0 1400x900x24" python YOUR_SCRIPT.py -A YOUR_ARG -B OTHER_ARG... ` 
