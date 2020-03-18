@@ -6,3 +6,15 @@
 *.pyc
 
 *.csv
+
+*.npy
+
+local_results/cnn/cartpole/Reward/random/try/training_data/runs/2020-03-17_22-42-45_CNN_Reward/events.out.tfevents.1584499365.vincent-XPS-15-9570
+
+local_results/cnn/cartpole/Reward/random/try/training_data/runs/2020-03-17_22-43-36_CNN_Reward/events.out.tfevents.1584499416.vincent-XPS-15-9570
+
+local_results/rl/CP_CNN_Reward_try/training_data/runs/vis/2020-03-17_23-23-19_SAC_CP_CNN_Reward_Gaussian_autotune/events.out.tfevents.1584501799.vincent-XPS-15-9570
+
+local_results/cnn/cartpole/Reward/random/try/cnn_params.yaml
+
+local_results/cnn/cartpole/Reward/random/try/test_results/test_set/test_results.txt
