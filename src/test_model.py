@@ -98,7 +98,7 @@ class Tester(object):
 	def test_one_image(self,image, label):
 		# Returns criterion loss and actual error when applying the model to an image and comparing output to label
 		outputs = self.net.forward(image.float())
-		print('Outputs: {}'.format(outputs.float().detach().cpu().numpy()[0]))
+		#print('Outputs: {}'.format(outputs.float().detach().cpu().numpy()[0]))
 		#print('Labels: {}'.format(label.float().detach().cpu().numpy()[0]))
 		loss = self.criterion(outputs.float(), label.float())
 		#print('Loss: {}'.format(loss.item()))

@@ -7,6 +7,7 @@ import numpy as np
 from train_model import Net, Rescale
 import torch
 import torch.nn as nn
+import torchvision.models as models
 
 from utils import *
 
@@ -260,17 +261,19 @@ class R_CNNDenseRewardWrapperCartpole(gym.Wrapper):
 		super().__init__(env)
 		self.model = self.loadModel(model_path)
 
-	def loadModel(self, model_path):
-		model = self.initialize_net()
+	def loadModel(self, model_path, cnn_type="resnet18"):
+		model = self.initialize_net(cnn_type)
 		model.load_state_dict(torch.load(model_path))
 		print('Loaded model ' + model_path)
 		model.eval()
 		return model
 
-	def initialize_net(self):
-		net = Net(nb_outputs = 1)
-		net = net.float()
-		return net
+	def initialize_net(self, cnn_type):
+		if cnn_type == 'resnet18':
+			model = models.resnet18(pretrained=False, num_classes=1)
+		else:
+			raise NotImplementedError("CP_R_CNN_State_Wrapper not implemented for another model type than resnet18.")
+		return model
 
 	def step(self, action):
 		observation, reward, done, info = self.env.step(action)
@@ -353,10 +356,12 @@ class S_CNNDenseRewardWrapperCartpole(R_CNNDenseRewardWrapperCartpole):
 	def __init__(self, env, model_path='State_trained_model.pth'):
 		super().__init__(env, model_path = model_path)
 
-	def initialize_net(self):
-		net = Net(nb_outputs = 2)
-		net = net.float()
-		return net
+	def initialize_net(self, cnn_type):
+		if cnn_type == 'resnet18':
+			model = models.resnet18(pretrained=False, num_classes=2)
+		else:
+			raise NotImplementedError("CP_S_CNN_State_Wrapper not implemented for another model type than resnet18.")
+		return model
 
 	def reward(self, state):
 		image = self.render(mode='rgb_array')

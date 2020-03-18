@@ -38,7 +38,7 @@ class Comparator(object):
 				raise ValueError("Different episode id among the different files. Before, we had until {}, now we go until {} with file {}".format(episode_ids[-1], data[-1, 1], run))
 
 			if rewards.size == 0:
-				rewards = data[:,0]
+				rewards = np.array([data[:,0]])
 			else:
 				rewards = np.vstack((rewards, data[:, 0]))
 			#print(run)
@@ -48,6 +48,7 @@ class Comparator(object):
 		rew_thresh = 0.7*max_reward			# Threshold of success is 70% of max reward on the environment
 		high_avg_thresh = 0.85*max_reward		# High average (needed to be a success)
 		low_avg_thresh = 0.5*max_reward		# Low average (needed to be "unstable")
+		print(rewards.shape)
 		nb_episodes = rewards.shape[1]
 		start_period = int(nb_episodes*0.90) 	# Start of period of interest
 

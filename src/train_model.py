@@ -465,7 +465,7 @@ class Trainer():
 				label = data['label']
 				label = label.to(self.device)
 				outputs = self.net_fwd(image)
-				print('Outputs: {}   |   Labels: {}'.format(outputs.float().detach().cpu().numpy()[0], label.float().detach().cpu().numpy()[0]))
+				#print('Outputs: {}   |   Labels: {}'.format(outputs.float().detach().cpu().numpy()[0], label.float().detach().cpu().numpy()[0]))
 				loss = self.compute_loss(outputs, label)
 				losses.append(loss.item())
 			else:

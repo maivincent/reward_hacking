@@ -31,7 +31,7 @@ exp:
   nb_train_im : 10000
 
 cnn:
-  reshape_size : [32, 32]
+  rescale_size : [32, 32]
   nb_epochs : 20
   batch_size : 16
   shuffle : True

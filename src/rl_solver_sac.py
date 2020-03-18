@@ -256,19 +256,19 @@ if __name__ == '__main__':
 	if env_name == 'CP_CNN_State':
 		if not model_name or not gen_mode:
 			raise ValueError("model_name and gen_mode is needed under options -n and -g for {}".format(env_name))
-		cnn_use_path = os.path.join(temp_root, config['paths'][computer]['cnn'], test_env_name, 'State', gen_mode, model_name, 'model.pth')
+		cnn_use_path = os.path.join(temp_root, config['paths'][computer]['cnn'], test_env_name, 'State', gen_mode, model_name, 'latest_model.pth')
 		# If Mila, copy model from save folder to local disk
 		if computer == 'mila':
-			cnn_save_path =  os.path.join(config['paths'][computer]['save_cnn'], test_env_name, 'State', gen_mode, model_name, 'model.pth')
+			cnn_save_path =  os.path.join(config['paths'][computer]['save_cnn'], test_env_name, 'State', gen_mode, model_name, 'latest_model.pth')
 			ut.copyAndOverwriteFile(cnn_save_path, cnn_use_path)
 		env = S_CNNDenseRewardWrapperCartpole(ContinuousActionWrapperCartpole(gym.make('CartPole-v0')), model_path = cnn_use_path)
 	elif env_name == 'CP_CNN_Reward':
 		if not model_name or not gen_mode:
 			raise ValueError("model_name and gen_mode is needed under options -n and -g for {}".format(env_name))
-		cnn_use_path = os.path.join(temp_root, config['paths'][computer]['cnn'], test_env_name, 'Reward', gen_mode, model_name, 'model.pth')
+		cnn_use_path = os.path.join(temp_root, config['paths'][computer]['cnn'], test_env_name, 'Reward', gen_mode, model_name, 'latest_model.pth')
 		# If Mila, copy model from save folder to local disk
 		if computer == 'mila':
-			cnn_save_path =  os.path.join(config['paths'][computer]['save_cnn'], test_env_name, 'Reward', gen_mode, model_name, 'model.pth')
+			cnn_save_path =  os.path.join(config['paths'][computer]['save_cnn'], test_env_name, 'Reward', gen_mode, model_name, 'latest_model.pth')
 			ut.copyAndOverwriteFile(cnn_save_path, cnn_use_path)
 		env = R_CNNDenseRewardWrapperCartpole(ContinuousActionWrapperCartpole(gym.make('CartPole-v0')), model_path = cnn_use_path)
 	elif env_name == 'CP_Noisy_Reward_10':
