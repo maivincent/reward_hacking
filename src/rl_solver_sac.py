@@ -83,6 +83,8 @@ class SAC_Solver():
 		self.memory = ReplayMemory(self.replay_size)
 
 		self.reward_mem = []
+		self.reward_profit_mem = []
+		self.reward_error_mem = []
 		self.test_mem = []
 
 
@@ -133,6 +135,8 @@ class SAC_Solver():
 		# Episodes
 		for i_episode in range(1, self.num_episodes + 1):
 			episode_reward = 0
+			episode_reward_profit = 0
+			episode_reward_abs_cum_error = 0
 			episode_steps = 0
 			done = False
 			state = self.env.reset()
@@ -156,7 +160,12 @@ class SAC_Solver():
 						#self.writer.add_scalar('entropy_temprature/alpha', alpha, updates)
 						updates += 1
 
-				next_state, reward, done, _ = self.env.step(action) # Step
+				next_state, reward, done, info = self.env.step(action) # Step
+				gt_reward = info['GT_reward']
+				print('Estimated Reward: {}'.format(reward))
+				print('GT Reward: {}'.format(gt_reward))
+				reward_profit = reward-gt_reward
+				print('Reward_profit: {}'.format(reward_profit))
 				episode_steps += 1
 				if episode_steps%1000 == 0:
 					print("Episode step: {}".format(episode_steps))
@@ -166,6 +175,10 @@ class SAC_Solver():
 					self.env.reset()
 				total_numsteps += 1
 				episode_reward += reward
+				episode_reward_profit += reward_profit
+				print(episode_reward_profit)
+				episode_reward_abs_cum_error += np.abs(reward_profit)
+
 
 				# Ignore the "done" signal if it comes from hitting the time horizon.
 				# (https://github.com/openai/spinningup/blob/master/spinup/algos/sac/sac.py)
@@ -177,6 +190,8 @@ class SAC_Solver():
 
 			self.writer.add_scalar('reward/train', episode_reward, i_episode)
 			self.reward_mem.append((episode_reward, i_episode))
+			self.reward_profit_mem.append((episode_reward_profit, i_episode))
+			self.reward_error_mem.append((episode_reward_abs_cum_error, i_episode))
 
 			print("Episode: {}, total numsteps: {}, episode steps: {}, reward: {}".format(i_episode, total_numsteps, episode_steps, round(episode_reward, 2)))
 

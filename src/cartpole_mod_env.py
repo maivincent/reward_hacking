@@ -144,6 +144,7 @@ class DenseRewardWrapperCartpole(gym.Wrapper):
 
 	def step(self, action):
 		observation, reward, done, info = self.env.step(action)
+		info = {}
 		return observation, self.reward(observation), done, info
 
 	def reward(self, obs):
@@ -288,6 +289,7 @@ class R_CNNDenseRewardWrapperCartpole(gym.Wrapper):
 		image = self.transformImage(image)
 		reward = self.model.forward(image.float())
 		reward = reward.detach().numpy()[0][0]
+		print('Reward given by CNN: {}'.format(reward))
 		return reward
 
 	def transformImage(self, image):
@@ -376,3 +378,14 @@ class S_CNNDenseRewardWrapperCartpole(R_CNNDenseRewardWrapperCartpole):
 
 		x, theta = UnnormalizeLabel('cartpole', 'State', state)
 		return state2reward(x, theta)
+
+
+class GTDenseRewardInfoWrapperCartpole(gym.Wrapper):
+
+	def step(self, action):
+		observation, reward, done, info = self.env.step(action)
+		x = self.state[0]
+		theta = self.state[2]
+		gt_reward = state2reward(x, theta)
+		info['GT_reward'] = gt_reward
+		return observation, reward, done, info
