@@ -256,21 +256,37 @@ if __name__ == '__main__':
 	if env_name == 'CP_CNN_State':
 		if not model_name or not gen_mode:
 			raise ValueError("model_name and gen_mode is needed under options -n and -g for {}".format(env_name))
-		cnn_use_path = os.path.join(temp_root, config['paths'][computer]['cnn'], test_env_name, 'State', gen_mode, model_name, 'latest_model.pth')
+		cnn_folder = os.path.join(temp_root, config['paths'][computer]['cnn'], test_env_name, 'State', gen_mode, model_name)
 		# If Mila, copy model from save folder to local disk
 		if computer == 'mila':
-			cnn_save_path =  os.path.join(config['paths'][computer]['save_cnn'], test_env_name, 'State', gen_mode, model_name, 'latest_model.pth')
-			ut.copyAndOverwriteFile(cnn_save_path, cnn_use_path)
-		env = S_CNNDenseRewardWrapperCartpole(ContinuousActionWrapperCartpole(gym.make('CartPole-v0')), model_path = cnn_use_path)
+			cnn_save_folder =  os.path.join(config['paths'][computer]['save_cnn'], 'cartpole', 'State', gen_mode, model_name)
+			cnn_use_file = os.path.join(cnn_folder, 'latest_model.pth')
+			cnn_save_file = os.path.join(cnn_save_folder, 'latest_model.pth')
+			cnn_use_params = os.path.join(cnn_folder, 'cnn_params.yaml')
+			cnn_save_params = os.path.join(cnn_save_folder, 'cnn_params.yaml')
+			ut.copyAndOverwriteFile(cnn_save_file, cnn_use_file)
+			ut.copyAndOverwriteFile(cnn_save_params, cnn_use_params)
+		env = gym.make('CartPole-v0')
+		env = ContinuousActionWrapperCartpole(env)
+		env = S_CNNDenseRewardWrapperCartpole(env, cnn_folder, 'resnet18')
+		env = GTDenseRewardInfoWrapperCartpole(env)
 	elif env_name == 'CP_CNN_Reward':
 		if not model_name or not gen_mode:
 			raise ValueError("model_name and gen_mode is needed under options -n and -g for {}".format(env_name))
-		cnn_use_path = os.path.join(temp_root, config['paths'][computer]['cnn'], test_env_name, 'Reward', gen_mode, model_name, 'latest_model.pth')
+		cnn_folder = os.path.join(temp_root, config['paths'][computer]['cnn'], test_env_name, 'Reward', gen_mode, model_name)
 		# If Mila, copy model from save folder to local disk
 		if computer == 'mila':
-			cnn_save_path =  os.path.join(config['paths'][computer]['save_cnn'], test_env_name, 'Reward', gen_mode, model_name, 'latest_model.pth')
-			ut.copyAndOverwriteFile(cnn_save_path, cnn_use_path)
-		env = R_CNNDenseRewardWrapperCartpole(ContinuousActionWrapperCartpole(gym.make('CartPole-v0')), model_path = cnn_use_path)
+			cnn_save_folder =  os.path.join(config['paths'][computer]['save_cnn'], 'cartpole', 'Reward', gen_mode, model_name)
+			cnn_use_file = os.path.join(cnn_folder, 'latest_model.pth')
+			cnn_save_file = os.path.join(cnn_save_folder, 'latest_model.pth')
+			cnn_use_params = os.path.join(cnn_folder, 'cnn_params.yaml')
+			cnn_save_params = os.path.join(cnn_save_folder, 'cnn_params.yaml')
+			ut.copyAndOverwriteFile(cnn_save_file, cnn_use_file)
+			ut.copyAndOverwriteFile(cnn_save_params, cnn_use_params)
+		env = gym.make('CartPole-v0')
+		env = ContinuousActionWrapperCartpole(env)
+		env = R_CNNDenseRewardWrapperCartpole(env, cnn_folder, 'resnet18')
+		env = GTDenseRewardInfoWrapperCartpole(env)
 	elif env_name == 'CP_Noisy_Reward_10':
 		env = NoisyDenseRewardWrapperCartpole(ContinuousActionWrapperCartpole(gym.make('CartPole-v0')), std_dev = 0.1)
 	elif env_name == 'CP_Noisy_Reward_20':

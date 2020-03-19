@@ -4,7 +4,7 @@ import numpy as np
 
 from gym import spaces
 import numpy as np 
-from train_model import Net, Rescale
+from train_model import Net, Rescale, NormalizeImage, UnnormalizeLabel
 import torch
 import torch.nn as nn
 import torchvision.models as models
@@ -257,12 +257,16 @@ class ImGenDenseRewardWrapperCartpole(DenseRewardWrapperCartpole):
 class R_CNNDenseRewardWrapperCartpole(gym.Wrapper):
 	# Generates reward through rendering the environment, and passing the image through a loaded, pre-trained model 
 
-	def __init__(self, env, model_path='Reward_trained_model.pth'):
+	def __init__(self, env, cnn_folder_path, cnn_type):
 		super().__init__(env)
-		self.model = self.loadModel(model_path)
+		params_file = os.path.join(cnn_folder_path, 'cnn_params.yaml')
+		self.model_params = loadYAMLFromFile(params_file)
+		self.model = self.loadModel(cnn_folder_path, cnn_type)
+		self.config = loadYAMLFromFile('config_cartpole.yaml')
 
-	def loadModel(self, model_path, cnn_type="resnet18"):
+	def loadModel(self, cnn_folder_path, cnn_type="resnet18"):
 		model = self.initialize_net(cnn_type)
+		model_path = os.path.join(cnn_folder_path, 'latest_model.pth')
 		model.load_state_dict(torch.load(model_path))
 		print('Loaded model ' + model_path)
 		model.eval()
@@ -286,10 +290,11 @@ class R_CNNDenseRewardWrapperCartpole(gym.Wrapper):
 		reward = reward.detach().numpy()[0][0]
 		return reward
 
-	def transformImage(self, image):  ## COMMENT: NO NORMALIZATION?
+	def transformImage(self, image):
 		image = image.copy()
-		image = image/image.max()
-		image = rescaleImage(image, (32, 32))
+		image = NormalizeImage(image, self.model_params['dataset_stats'])
+		new_size = (self.config['cnn']['rescale_size'][0], self.config['cnn']['rescale_size'][1])
+		image = rescaleImage(image, new_size)
 		image = image.transpose((2, 0, 1))
 		image = torch.from_numpy(image)
 		image = image.unsqueeze(0)
@@ -369,6 +374,5 @@ class S_CNNDenseRewardWrapperCartpole(R_CNNDenseRewardWrapperCartpole):
 		state = self.model.forward(image.float())
 		state = state.detach().numpy()[0]
 
-		x = (state[0]-0.5)*5
-		theta = (state[1]-0.5)
+		x, theta = UnnormalizeLabel('cartpole', 'State', state)
 		return state2reward(x, theta)
