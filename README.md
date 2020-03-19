@@ -15,7 +15,17 @@ git submodule update
 Conda environment:
 ```
 conda env create -f environment.yml 
+```
+There will be some error with the gym-duckietown package. It's ok.
+Activate the environment:
+```
 conda activate rew_est
+```
+or ```source activate rew_est```
+And then:
+```
+cd gym-duckietown
+pip install -e .
 ```
 
 There may be some problems with `pyglet` (still have not figured out how to set it up correctly automatically).
@@ -24,11 +34,19 @@ You need to backtrack the installation to version 1.3.2:
 pip3 uninstall pyglet
 pip3 install --user pyglet==1.3.2
 ```
+Finally, you will need to downgrade your `torchvision` version to avoid a `Pillow` error.
+```
+pip uninstall torchvision
+pip install torchvision==0.3.0
+```
 
 ### Username (for computations on the Mila cluster)
 If you want to use on the Mila cluster, you will need to change `maivince` for your username in:
+
 `config_cartpole.yaml/paths/mila/`
+
 `config_duckietown.yaml/paths/mila`
+
 `config_duckietown.yaml/paths/mila`
 
 
@@ -41,6 +59,7 @@ This repository contains several scripts allowing to test reward estimation and 
 ### Contents
 - `src`
    Source code. Launch the scripts from there.
+   
    **Wrappers**
    - `cartpole_mod_env.py` includes all the wrappers for the cartpole environment.
    - `duckietown_mod_env.py` includes all the wrappers for the Duckietown environment.
@@ -50,7 +69,6 @@ This repository contains several scripts allowing to test reward estimation and 
    - `config_duckietown.yaml` includes the configuration parameters for the Duckietown environment.
    - `config_duckietown_cam.yaml` includes the configuration parameters for the Duckietown environment with front camera input (not implemented yet).
    - `environment.yml` has information for the Conda environment that is being used. See **Installation** for more details.
-
 
    **Utils**
    - `resnet.py` (can be deleted I think, not sure) was for prototyping purposes
@@ -91,20 +109,35 @@ More details about the options are in the `utils.py` file, section `Arg checking
 ### Examples
 
 #### Cartpole on the local computer
+
 0. `cd src`
+
 1. Generate images on the local computer, with randomly generated states.
+
    `python generate_images.py -c local -e cartpole -g random`
+
 2. Train a CNN on this images, using the "Reward" as a label (could be also "State") and a resnet18 CNN (for now, the only implemented). This CNN will be named `my_cnn`
+
    `python -u train_model.py -c local -e cartpole -g random -n my_cnn -m resnet18 -l Reward`
+
 3. Test the `my_cnn` CNN
+   
    `python -u test_model.py -l Reward -c local -e cartpole -g random -n my_cnn -m resnet18`
+
 4. Train a SAC agent on the Cartpole with the `my_cnn` as a reward provider
+   
    `python -u rl_solver_sac.py -c local -e cartpole -t CP_CNN_Reward -g random -n my_cnn`
+
 5. Train, for comparison, a SAC agent on the Cartpole with the groundtruth reward
+   
    `python -u rl_solver_sac.py -c local -e cartpole -t CP_GT_Reward` 
+
 6. Compare training stats of both environments
+   
    `python compare_rl_agents.py -c local -f CP_CNN_Reward_my_cnn,CP_GT_Reward`
+
 7. View the RL policy for the `CP_CNN_Reward_my_cnn` agent
+   
    `python view_rl_policy.py -c local -e cartpole -n CP_CNN_Reward_my_cnn`
 
 
@@ -117,12 +150,23 @@ You can also, for some scripts, run with the `-c transfer` option. This is when 
 
 ## Troubleshooting
 
+
+### Installation errors
+#### Pyglet
  If you get this error:
  ```
  AttributeError: 'ImageData' object has no attribute 'data'
  ```
  It's probably because you have not backtracked `pyglet` correctly. Refer to the **Installation** instructions to do so.
 
-
- When using on a cluster, you will need a virtual screen. In your scripts, use XVFB:
- `xvfb-run -a -s "-screen 0 1400x900x24" python YOUR_SCRIPT.py -A YOUR_ARGUMENT ... ` 
+#### Torchvision
+ If you get this error:
+ ```
+ ImportError: cannot import name 'PILLOW_VERSION'
+ ```
+ It's probably because your have not backtracked `torchvision` to the 0.3.0 version. See the **Installation** instructions.
+ 
+ 
+ ### Screen
+ When using through `ssh`, you will need a virtual screen. In your scripts, use XVFB:
+  `xvfb-run -a -s "-screen 0 1400x900x24" python YOUR_SCRIPT.py -A YOUR_ARG -B OTHER_ARG... ` 
