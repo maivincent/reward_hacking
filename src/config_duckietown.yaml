@@ -14,9 +14,9 @@ paths :
     cnn : '../cluster_results/cnn/'
     rl: '../cluster_results/rl/'  
   mila :
-    save_images : '/network/tmp1/maivince/images/'
-    save_cnn : '/network/tmp1/maivince/cnn/'
-    save_rl : '/network/tmp1/maivince/rl/'
+    save_images : '/network/tmp1/kruegerd/images/'
+    save_cnn : '/network/tmp1/kruegerd/cnn/'
+    save_rl : '/network/tmp1/kruegerd/rl/'
     images : 'images/'
     cnn : 'cnn/'
     rl : 'rl/'
