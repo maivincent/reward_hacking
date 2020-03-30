@@ -456,7 +456,10 @@ if __name__ == '__main__':
 
 	### Testing environment
 	if test_env_name == "cartpole":
-		test_env = DenseRewardWrapperCartpole(ContinuousActionWrapperCartpole(gym.make('CartPole-v0')))
+		test_env = gym.make('CartPole-v0')
+		test_env = ContinuousActionWrapperCartpole(test_env)
+		test_env = DenseRewardWrapperCartpole(test_env)
+		test_env = GTDenseRewardInfoWrapperCartpole(test_env)
 	elif test_env_name == 'duckietown':
 		test_env = DTConstantVelWrapper(DTLaneFollowingRewardWrapper(DTDistAngleObsWrapper(DTDroneImageGenerator(DuckietownEnv()))))#DTLaneFollowingRewardWrapper(DuckietownEnv())#
 	elif test_env_name == 'duckietown_cam':
