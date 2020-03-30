@@ -28,6 +28,9 @@ class Comparator(object):
 		nb_success = 0
 		nb_unstable = 0
 
+        if len(list_runs) == 1:
+
+
 		for run in list_runs:
 			data = np.load(run)
 			# If it is the first time
@@ -64,7 +67,7 @@ class Comparator(object):
 				cat = 'success'				# Stable otherwise (no lower than 70% of max score or average higher than 85% of max score on last 85%)
 				nb_success += 1
 				if success_rewards.size == 0:
-					success_rewards = run
+					success_rewards = run.reshape((1,-1))
 				else:
 					success_rewards = np.vstack((success_rewards, run))
 		status = [nb_success, nb_unstable, nb_failed]
