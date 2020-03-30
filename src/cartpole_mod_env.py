@@ -25,12 +25,12 @@ class ContinuousActionWrapperCartpole(gym.Wrapper):
 	def reset(self):
 		self.steps_beyond_done = None
 		self.env.reset()
-		print('---')
-		print(self.env.state)
+		#print('---')
+		#print(self.env.state)
 		new_state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
 		self.env.state = new_state
-		print(self.env.state)
-		print('---')
+		#print(self.env.state)
+		#print('---')
 		return np.transpose(np.array(self.env.state))
 
 	def step(self, action):
