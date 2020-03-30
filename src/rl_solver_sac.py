@@ -303,15 +303,29 @@ if __name__ == '__main__':
 		env = R_CNNDenseRewardWrapperCartpole(env, cnn_folder, 'resnet18')
 		env = GTDenseRewardInfoWrapperCartpole(env)
 	elif env_name == 'CP_Noisy_Reward_10':
-		env = NoisyDenseRewardWrapperCartpole(ContinuousActionWrapperCartpole(gym.make('CartPole-v0')), std_dev = 0.1)
+		env = gym.make('CartPole-v0')
+		env = ContinuousActionWrapperCartpole(env)
+		env = NoisyDenseRewardWrapperCartpole(env, std_dev = 0.1)
+		env = GTDenseRewardInfoWrapperCartpole(env)
 	elif env_name == 'CP_Noisy_Reward_20':
-		env = NoisyDenseRewardWrapperCartpole(ContinuousActionWrapperCartpole(gym.make('CartPole-v0')), std_dev = 0.2)
+		env = gym.make('CartPole-v0')
+		env = ContinuousActionWrapperCartpole(env)
+		env = NoisyDenseRewardWrapperCartpole(env, std_dev = 0.2)
+		env = GTDenseRewardInfoWrapperCartpole(env)
 	elif env_name == 'CP_Noisy_Reward_30':
-		env = NoisyDenseRewardWrapperCartpole(ContinuousActionWrapperCartpole(gym.make('CartPole-v0')), std_dev = 0.3)
+		env = gym.make('CartPole-v0')
+		env = ContinuousActionWrapperCartpole(env)
+		env = NoisyDenseRewardWrapperCartpole(env, std_dev = 0.3)
+		env = GTDenseRewardInfoWrapperCartpole(env)
 	elif env_name == 'CP_GT_Reward':
-		env = DenseRewardWrapperCartpole(ContinuousActionWrapperCartpole(gym.make('CartPole-v0')))
+		env = gym.make('CartPole-v0')
+		env = ContinuousActionWrapperCartpole(env)		
+		env = DenseRewardWrapperCartpole(env)
+		env = GTDenseRewardInfoWrapperCartpole(env)
 	elif env_name == 'CP_Original_Reward':
-		env = ContinuousActionWrapperCartpole(gym.make('CartPole-v0'))
+		env = gym.make('CartPole-v0')
+		env = ContinuousActionWrapperCartpole(env)
+		env = GTDenseRewardInfoWrapperCartpole(env)
 	
 	##### Duckietown
 	elif env_name == 'DT_GT_Reward':

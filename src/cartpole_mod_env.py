@@ -289,7 +289,6 @@ class R_CNNDenseRewardWrapperCartpole(gym.Wrapper):
 		image = self.transformImage(image)
 		reward = self.model.forward(image.float())
 		reward = reward.detach().numpy()[0][0]
-		print('Reward given by CNN: {}'.format(reward))
 		return reward
 
 	def transformImage(self, image):
