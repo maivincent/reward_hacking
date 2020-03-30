@@ -28,9 +28,6 @@ class Comparator(object):
 		nb_success = 0
 		nb_unstable = 0
 
-        if len(list_runs) == 1:
-
-
 		for run in list_runs:
 			data = np.load(run)
 			# If it is the first time
