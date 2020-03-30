@@ -357,6 +357,7 @@ if __name__ == '__main__':
 		env = DTDistAngleObsWrapper(env)
 		env = DTLaneFollowingRewardWrapper(env)
 		env = DTConstantVelWrapper(env)
+		env = GTDenseRewardInfoWrapperDT(env)
 	elif env_name == 'DT_Noisy_Reward_10':
 		env = DuckietownEnv()
 		env = DTDroneImageGenerator(env)
@@ -364,6 +365,7 @@ if __name__ == '__main__':
 		env = DTLaneFollowingRewardWrapper(env)
 		env = DTConstantVelWrapper(env)
 		env = DTNoisyRewardWrapper(env, 0.10)
+		env = GTDenseRewardInfoWrapperDT(env)
 	elif env_name == 'DT_Noisy_Reward_20':
 		env = DuckietownEnv()
 		env = DTDroneImageGenerator(env)
@@ -371,6 +373,7 @@ if __name__ == '__main__':
 		env = DTLaneFollowingRewardWrapper(env)
 		env = DTConstantVelWrapper(env)
 		env = DTNoisyRewardWrapper(env, 0.20)
+		env = GTDenseRewardInfoWrapperDT(env)
 	elif env_name == 'DT_Noisy_Reward_30':
 		env = DuckietownEnv()
 		env = DTDroneImageGenerator(env)
@@ -378,6 +381,7 @@ if __name__ == '__main__':
 		env = DTLaneFollowingRewardWrapper(env)
 		env = DTConstantVelWrapper(env)
 		env = DTNoisyRewardWrapper(env, 0.30)
+		env = GTDenseRewardInfoWrapperDT(env)
 	elif env_name == 'DT_Noisy_Reward_40':
 		env = DuckietownEnv()
 		env = DTDroneImageGenerator(env)
@@ -385,6 +389,7 @@ if __name__ == '__main__':
 		env = DTLaneFollowingRewardWrapper(env)
 		env = DTConstantVelWrapper(env)
 		env = DTNoisyRewardWrapper(env, 0.40)
+		env = GTDenseRewardInfoWrapperDT(env)
 	elif env_name == 'DT_Noisy_Reward_50':
 		env = DuckietownEnv()
 		env = DTDroneImageGenerator(env)
@@ -392,6 +397,7 @@ if __name__ == '__main__':
 		env = DTLaneFollowingRewardWrapper(env)
 		env = DTConstantVelWrapper(env)
 		env = DTNoisyRewardWrapper(env, 0.50)	
+		env = GTDenseRewardInfoWrapperDT(env)
 	elif env_name == 'DT_Noisy_Reward_100':
 		env = DuckietownEnv()
 		env = DTDroneImageGenerator(env)
@@ -399,6 +405,7 @@ if __name__ == '__main__':
 		env = DTLaneFollowingRewardWrapper(env)
 		env = DTConstantVelWrapper(env)
 		env = DTNoisyRewardWrapper(env, 1)	
+		env = GTDenseRewardInfoWrapperDT(env)
 	elif env_name == 'DT_Noisy_Reward_500':
 		env = DuckietownEnv()
 		env = DTDroneImageGenerator(env)
@@ -406,6 +413,7 @@ if __name__ == '__main__':
 		env = DTLaneFollowingRewardWrapper(env)
 		env = DTConstantVelWrapper(env)
 		env = DTNoisyRewardWrapper(env, 5)
+		env = GTDenseRewardInfoWrapperDT(env)
 
 	elif env_name == 'DT_R_CNN_Reward':
 		env = DuckietownEnv()
@@ -423,6 +431,7 @@ if __name__ == '__main__':
 			ut.copyAndOverwriteFile(cnn_save_file, cnn_use_file)
 			ut.copyAndOverwriteFile(cnn_save_params, cnn_use_params)
 		env = DT_R_CNN_RewardWrapper(env, cnn_folder, 'resnet18')
+		env = GTDenseRewardInfoWrapperDT(env)
 
 	elif env_name == 'DT_S_CNN_Reward':
 		env = DuckietownEnv()
@@ -440,6 +449,7 @@ if __name__ == '__main__':
 			ut.copyAndOverwriteFile(cnn_save_file, cnn_use_file)
 			ut.copyAndOverwriteFile(cnn_save_params, cnn_use_params)
 		env = DT_S_CNN_RewardWrapper(env, cnn_folder, 'resnet18')
+		env = GTDenseRewardInfoWrapperDT(env)
 
 	elif env_name == 'DT_Ssplit_CNN_Reward':
 		raise NotImplementedError('Environment DT_Ssplit_CNN_Reward is not completely implemented yet - missing a solution for model_name')
@@ -460,6 +470,7 @@ if __name__ == '__main__':
 			ut.copyAndOverwriteFile(cnn_save_file, cnn_use_file)
 			ut.copyAndOverwriteFile(cnn_save_params, cnn_use_params)
 		env = DT_Ssplit_CNN_RewardWrapper(env, cnn_folder_d, 'resnet18', cnn_folder_a, 'resnet18')
+		env = GTDenseRewardInfoWrapperDT(env)
 
 	
 	##### Duckietown Cam
@@ -468,10 +479,11 @@ if __name__ == '__main__':
 		env = ResizeWrapper(env)
 		env = NormalizeWrapper(env)
 		env = ImgWrapper(env) # to make the images from 160x120x3 into 3x160x120
+		env = GTDenseRewardInfoWrapperDT(env)
 		print(env.observation_space)
 	##### Others
-	elif env_name == 'HalfCheetah-v2':
-		env = env = gym.make('HalfCheetah-v2')
+#	elif env_name == 'HalfCheetah-v2':
+#		env = env = gym.make('HalfCheetah-v2')
 
 	else:
 		raise ValueError('Environment name {} as written in config.yaml is unknown.'.format(env_name))
@@ -484,7 +496,12 @@ if __name__ == '__main__':
 		test_env = DenseRewardWrapperCartpole(test_env)
 		test_env = GTDenseRewardInfoWrapperCartpole(test_env)
 	elif test_env_name == 'duckietown':
-		test_env = DTConstantVelWrapper(DTLaneFollowingRewardWrapper(DTDistAngleObsWrapper(DTDroneImageGenerator(DuckietownEnv()))))#DTLaneFollowingRewardWrapper(DuckietownEnv())#
+		test_env = DuckietownEnv()
+		test_env = DTDroneImageGenerator(test_env)
+		test_env = DTDistAngleObsWrapper(test_env)
+		test_env = DTLaneFollowingRewardWrapper(test_env)
+		test_env = DTConstantVelWrapper(test_env)
+		test_env = GTDenseRewardInfoWrapperDT(test_env)
 	elif test_env_name == 'duckietown_cam':
 		test_env = DTConstantVelWrapper(DTLaneFollowingRewardWrapper(DTDroneImageGenerator(DuckietownEnv())))#DTLaneFollowingRewardWrapper(DuckietownEnv())#
 	else:

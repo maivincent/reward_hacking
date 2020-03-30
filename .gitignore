@@ -78,3 +78,9 @@ local_results/rl/DTC_GT_Reward/training_data/runs/vis/2020-03-25_18-23-45_SAC_DT
 local_results/rl/DTC_GT_Reward/training_data/runs/vis/2020-03-25_18-25-00_SAC_DTC_GT_Reward_Gaussian_autotune/events.out.tfevents.1585175100.vincent-XPS-15-9570
 
 local_results/rl/DTC_GT_Reward/training_data/runs/vis/2020-03-25_18-26-07_SAC_DTC_GT_Reward_Gaussian_autotune/events.out.tfevents.1585175167.vincent-XPS-15-9570
+
+local_results/rl/DT_GT_Reward/training_data/runs/vis/2020-03-30_17-08-21_SAC_DT_GT_Reward_Gaussian_autotune/events.out.tfevents.1585602501.vincent-XPS-15-9570
+
+local_results/rl/DT_GT_Reward/training_data/runs/vis/2020-03-30_17-11-37_SAC_DT_GT_Reward_Gaussian_autotune/events.out.tfevents.1585602697.vincent-XPS-15-9570
+
+local_results/rl/DT_Noisy_Reward_500/training_data/runs/vis/2020-03-30_17-12-59_SAC_DT_Noisy_Reward_500_Gaussian_autotune/events.out.tfevents.1585602779.vincent-XPS-15-9570

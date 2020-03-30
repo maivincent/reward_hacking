@@ -60,7 +60,8 @@ class DTLaneFollowingRewardWrapper(gym.Wrapper):
 		lane_pose = self.env.get_lane_pos2(self.env.cur_pos, self.env.cur_angle)
 		dist = lane_pose.dist        # Distance to lane center. Left is negative, right is positive.
 		angle = angleLimit(lane_pose.angle_rad)  # Angle from straight, in radians. Left is negative, right is positive.
-		return observation, self.reward([dist, angle]), done, info
+		reward = self.reward([dist, angle])
+		return observation, reward, done, info
 
 	def reward(self, state):
 		dist = state[0]
@@ -381,6 +382,20 @@ class ImgWrapper(gym.ObservationWrapper):
     def observation(self, observation):
         return observation.transpose(2, 0, 1)
 
+class GTDenseRewardInfoWrapperDT(gym.Wrapper):
+
+
+	def gt_reward(self):
+		lane_pose = self.env.get_lane_pos2(self.env.cur_pos, self.env.cur_angle)
+		dist = lane_pose.dist        # Distance to lane center. Left is negative, right is positive.
+		angle = angleLimit(lane_pose.angle_rad)
+		gt_reward = state2reward(dist, angle)
+		return gt_reward
+
+	def step(self, action):
+		observation, reward, done, info = self.env.step(action)
+		info['GT_reward'] = self.gt_reward()
+		return observation, reward, done, info
 
 #### Action wrappers
 if __name__ == '__main__':
