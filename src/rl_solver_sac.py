@@ -76,7 +76,11 @@ class SAC_Solver():
 		ut.makeDir(self.training_data_path + '/runs/test')
 		self.vis_path = self.training_data_path + '/runs/vis/{}_SAC_{}_{}_{}'.format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), self.env_name, self.policy, "autotune" if self.automatic_entropy_tuning else "")
 		self.train_res_path = self.training_data_path + '/runs/train/{}_SAC_{}_{}_{}'.format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), self.env_name, self.policy, "autotune" if self.automatic_entropy_tuning else "")
+		self.train_rew_profit_path = self.training_data_path + '/runs/train/{}_SAC_{}_{}_{}_return_profit'.format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), self.env_name, self.policy, "autotune" if self.automatic_entropy_tuning else "")
+		self.train_rew_error_path = self.training_data_path + '/runs/train/{}_SAC_{}_{}_{}_return_error'.format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), self.env_name, self.policy, "autotune" if self.automatic_entropy_tuning else "")
 		self.test_res_path = self.training_data_path + '/runs/test/{}_SAC_{}_{}_{}_test'.format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), self.env_name, self.policy, "autotune" if self.automatic_entropy_tuning else "")
+		self.test_rew_profit_path = self.training_data_path + '/runs/test/{}_SAC_{}_{}_{}_return_profit_test'.format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), self.env_name, self.policy, "autotune" if self.automatic_entropy_tuning else "")
+		self.test_rew_error_path = self.training_data_path + '/runs/test/{}_SAC_{}_{}_{}_return_error_test'.format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), self.env_name, self.policy, "autotune" if self.automatic_entropy_tuning else "")
 		self.critic_model_path = config_path['critic_model_path']
 		self.actor_model_path = config_path['actor_model_path']
 		self.writer = SummaryWriter(logdir=self.vis_path)
@@ -86,24 +90,36 @@ class SAC_Solver():
 		self.reward_profit_mem = []
 		self.reward_error_mem = []
 		self.test_mem = []
+		self.test_prof_mem = []
+		self.test_err_mem = []
 
 
 
 	def test(self, i_episode):
 		avg_reward = 0.
+		avg_reward_profit = 0
+		avg_reward_error = 0	
 		episodes = 10
 		for _  in range(episodes):
 			state = self.test_env.reset()
 			episode_reward = 0
+			episode_reward_profit = 0
+			episode_reward_abs_cum_error = 0
 			episode_steps = 0
 			done = False
 			while not done:
 				action = self.agent.select_action(state, eval=True)
 				if self.test_env_name == 'cartpole':
-					next_state, reward, done, _ = self.test_env.step(action)
+					next_state, reward, done, info = self.test_env.step(action)
 				elif self.test_env_name == 'duckietown':
-					next_state, reward, done, _ = self.test_env.step(action)
+					next_state, reward, done, info = self.test_env.step(action)
 				episode_reward += reward
+				
+				gt_reward = info['GT_reward']
+				reward_profit = reward-gt_reward
+				episode_reward_profit += reward_profit
+				episode_reward_abs_cum_error += np.abs(reward_profit)
+
 				state = next_state
 
 				episode_steps += 1
@@ -115,14 +131,20 @@ class SAC_Solver():
 					self.env.reset()
 
 			avg_reward += episode_reward
+			avg_reward_profit += episode_reward_profit
+			avg_reward_error += episode_reward_abs_cum_error
 		avg_reward /= episodes
+		avg_reward_profit /= episodes
+		avg_reward_error /= episodes
 
 
 		self.writer.add_scalar('avg_reward/test', avg_reward, i_episode)
 		self.test_mem.append((avg_reward, i_episode))
+		self.test_prof_mem.append((avg_reward_profit, i_episode))
+		self.test_err_mem.append((avg_reward_error, i_episode))
 
 		print("----------------------------------------")
-		print("Test Episodes: {}, Avg. Reward: {}".format(episodes, round(avg_reward, 2)))
+		print("Test Episodes: {}, Avg. Received Reward: {}, Avg. True Reward: {}, Avg. Reward Profit: {}".format(episodes, round(avg_reward, 2), round(avg_reward + avg_reward_profit, 2), round(avg_reward_profit, 2)))
 		print("----------------------------------------")		
 
 
@@ -162,10 +184,7 @@ class SAC_Solver():
 
 				next_state, reward, done, info = self.env.step(action) # Step
 				gt_reward = info['GT_reward']
-				print('Estimated Reward: {}'.format(reward))
-				print('GT Reward: {}'.format(gt_reward))
 				reward_profit = reward-gt_reward
-				print('Reward_profit: {}'.format(reward_profit))
 				episode_steps += 1
 				if episode_steps%1000 == 0:
 					print("Episode step: {}".format(episode_steps))
@@ -176,7 +195,7 @@ class SAC_Solver():
 				total_numsteps += 1
 				episode_reward += reward
 				episode_reward_profit += reward_profit
-				print(episode_reward_profit)
+				#print(episode_reward_profit)
 				episode_reward_abs_cum_error += np.abs(reward_profit)
 
 
@@ -193,7 +212,7 @@ class SAC_Solver():
 			self.reward_profit_mem.append((episode_reward_profit, i_episode))
 			self.reward_error_mem.append((episode_reward_abs_cum_error, i_episode))
 
-			print("Episode: {}, total numsteps: {}, episode steps: {}, reward: {}".format(i_episode, total_numsteps, episode_steps, round(episode_reward, 2)))
+			print("Episode: {}, total numsteps: {}, episode steps: {}, received reward: {}, ground truth reward: {}, reward profit: {}".format(i_episode, total_numsteps, episode_steps, round(episode_reward, 2), round(episode_reward - episode_reward_profit, 2), round(episode_reward_profit, 2)))
 
 			if i_episode % 10 == 0 and self.eval == True:
 				self.test(i_episode)
@@ -208,8 +227,12 @@ class SAC_Solver():
 
 	def save_results(self):
 		np.save(self.test_res_path,self.test_mem)
+		np.save(self.test_rew_profit_path, self.test_prof_mem)
+		np.save(self.test_rew_error_path, self.test_err_mem)
 		np.save(self.train_res_path, self.reward_mem)
-		
+		np.save(self.train_rew_profit_path, self.reward_profit_mem)
+		np.save(self.train_rew_error_path, self.reward_profit_mem)
+
 
 if __name__ == '__main__':
 	# Loading general config file
@@ -334,6 +357,7 @@ if __name__ == '__main__':
 		env = DTDistAngleObsWrapper(env)
 		env = DTLaneFollowingRewardWrapper(env)
 		env = DTConstantVelWrapper(env)
+		env = GTDenseRewardInfoWrapperDT(env)
 	elif env_name == 'DT_Noisy_Reward_10':
 		env = DuckietownEnv()
 		env = DTDroneImageGenerator(env)
@@ -341,6 +365,7 @@ if __name__ == '__main__':
 		env = DTLaneFollowingRewardWrapper(env)
 		env = DTConstantVelWrapper(env)
 		env = DTNoisyRewardWrapper(env, 0.10)
+		env = GTDenseRewardInfoWrapperDT(env)
 	elif env_name == 'DT_Noisy_Reward_20':
 		env = DuckietownEnv()
 		env = DTDroneImageGenerator(env)
@@ -348,6 +373,7 @@ if __name__ == '__main__':
 		env = DTLaneFollowingRewardWrapper(env)
 		env = DTConstantVelWrapper(env)
 		env = DTNoisyRewardWrapper(env, 0.20)
+		env = GTDenseRewardInfoWrapperDT(env)
 	elif env_name == 'DT_Noisy_Reward_30':
 		env = DuckietownEnv()
 		env = DTDroneImageGenerator(env)
@@ -355,6 +381,7 @@ if __name__ == '__main__':
 		env = DTLaneFollowingRewardWrapper(env)
 		env = DTConstantVelWrapper(env)
 		env = DTNoisyRewardWrapper(env, 0.30)
+		env = GTDenseRewardInfoWrapperDT(env)
 	elif env_name == 'DT_Noisy_Reward_40':
 		env = DuckietownEnv()
 		env = DTDroneImageGenerator(env)
@@ -362,6 +389,7 @@ if __name__ == '__main__':
 		env = DTLaneFollowingRewardWrapper(env)
 		env = DTConstantVelWrapper(env)
 		env = DTNoisyRewardWrapper(env, 0.40)
+		env = GTDenseRewardInfoWrapperDT(env)
 	elif env_name == 'DT_Noisy_Reward_50':
 		env = DuckietownEnv()
 		env = DTDroneImageGenerator(env)
@@ -369,6 +397,7 @@ if __name__ == '__main__':
 		env = DTLaneFollowingRewardWrapper(env)
 		env = DTConstantVelWrapper(env)
 		env = DTNoisyRewardWrapper(env, 0.50)	
+		env = GTDenseRewardInfoWrapperDT(env)
 	elif env_name == 'DT_Noisy_Reward_100':
 		env = DuckietownEnv()
 		env = DTDroneImageGenerator(env)
@@ -376,6 +405,7 @@ if __name__ == '__main__':
 		env = DTLaneFollowingRewardWrapper(env)
 		env = DTConstantVelWrapper(env)
 		env = DTNoisyRewardWrapper(env, 1)	
+		env = GTDenseRewardInfoWrapperDT(env)
 	elif env_name == 'DT_Noisy_Reward_500':
 		env = DuckietownEnv()
 		env = DTDroneImageGenerator(env)
@@ -383,6 +413,7 @@ if __name__ == '__main__':
 		env = DTLaneFollowingRewardWrapper(env)
 		env = DTConstantVelWrapper(env)
 		env = DTNoisyRewardWrapper(env, 5)
+		env = GTDenseRewardInfoWrapperDT(env)
 
 	elif env_name == 'DT_R_CNN_Reward':
 		env = DuckietownEnv()
@@ -400,6 +431,7 @@ if __name__ == '__main__':
 			ut.copyAndOverwriteFile(cnn_save_file, cnn_use_file)
 			ut.copyAndOverwriteFile(cnn_save_params, cnn_use_params)
 		env = DT_R_CNN_RewardWrapper(env, cnn_folder, 'resnet18')
+		env = GTDenseRewardInfoWrapperDT(env)
 
 	elif env_name == 'DT_S_CNN_Reward':
 		env = DuckietownEnv()
@@ -417,6 +449,7 @@ if __name__ == '__main__':
 			ut.copyAndOverwriteFile(cnn_save_file, cnn_use_file)
 			ut.copyAndOverwriteFile(cnn_save_params, cnn_use_params)
 		env = DT_S_CNN_RewardWrapper(env, cnn_folder, 'resnet18')
+		env = GTDenseRewardInfoWrapperDT(env)
 
 	elif env_name == 'DT_Ssplit_CNN_Reward':
 		raise NotImplementedError('Environment DT_Ssplit_CNN_Reward is not completely implemented yet - missing a solution for model_name')
@@ -437,6 +470,7 @@ if __name__ == '__main__':
 			ut.copyAndOverwriteFile(cnn_save_file, cnn_use_file)
 			ut.copyAndOverwriteFile(cnn_save_params, cnn_use_params)
 		env = DT_Ssplit_CNN_RewardWrapper(env, cnn_folder_d, 'resnet18', cnn_folder_a, 'resnet18')
+		env = GTDenseRewardInfoWrapperDT(env)
 
 	
 	##### Duckietown Cam
@@ -445,10 +479,11 @@ if __name__ == '__main__':
 		env = ResizeWrapper(env)
 		env = NormalizeWrapper(env)
 		env = ImgWrapper(env) # to make the images from 160x120x3 into 3x160x120
+		env = GTDenseRewardInfoWrapperDT(env)
 		print(env.observation_space)
 	##### Others
-	elif env_name == 'HalfCheetah-v2':
-		env = env = gym.make('HalfCheetah-v2')
+#	elif env_name == 'HalfCheetah-v2':
+#		env = env = gym.make('HalfCheetah-v2')
 
 	else:
 		raise ValueError('Environment name {} as written in config.yaml is unknown.'.format(env_name))
@@ -461,7 +496,12 @@ if __name__ == '__main__':
 		test_env = DenseRewardWrapperCartpole(test_env)
 		test_env = GTDenseRewardInfoWrapperCartpole(test_env)
 	elif test_env_name == 'duckietown':
-		test_env = DTConstantVelWrapper(DTLaneFollowingRewardWrapper(DTDistAngleObsWrapper(DTDroneImageGenerator(DuckietownEnv()))))#DTLaneFollowingRewardWrapper(DuckietownEnv())#
+		test_env = DuckietownEnv()
+		test_env = DTDroneImageGenerator(test_env)
+		test_env = DTDistAngleObsWrapper(test_env)
+		test_env = DTLaneFollowingRewardWrapper(test_env)
+		test_env = DTConstantVelWrapper(test_env)
+		test_env = GTDenseRewardInfoWrapperDT(test_env)
 	elif test_env_name == 'duckietown_cam':
 		test_env = DTConstantVelWrapper(DTLaneFollowingRewardWrapper(DTDroneImageGenerator(DuckietownEnv())))#DTLaneFollowingRewardWrapper(DuckietownEnv())#
 	else:
