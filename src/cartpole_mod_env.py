@@ -359,9 +359,6 @@ class R_CNNDenseRewardWrapperCartpole(gym.Wrapper):
 class S_CNNDenseRewardWrapperCartpole(R_CNNDenseRewardWrapperCartpole):
 	# Generates reward through 1) rendering the environment, 2) passing the image through a loaded, pre-trained model which outputs the state, 3) convert state in reward
 
-	def __init__(self, env, model_path='State_trained_model.pth'):
-		super().__init__(env, model_path = model_path)
-
 	def initialize_net(self, cnn_type):
 		if cnn_type == 'resnet18':
 			model = models.resnet18(pretrained=False, num_classes=2)
