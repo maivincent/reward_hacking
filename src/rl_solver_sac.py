@@ -56,6 +56,7 @@ class SAC_Solver():
 		self.target_update_interval = config_rl['target_update_interval']
 		self.replay_size = config_rl['replay_size']
 		self.cuda = config_rl['cuda']
+		self.gen_est_reward_test = config_rl['gen_est_reward_test']
 
 		self.sac_args = SAC_args(self.gamma, self.tau, self.lr, self.alpha, self.automatic_entropy_tuning, self.policy, self.target_update_interval, self.cuda, self.hidden_size)
 
@@ -113,9 +114,12 @@ class SAC_Solver():
 					next_state, reward, done, info = self.test_env.step(action)
 				elif self.test_env_name == 'duckietown':
 					next_state, reward, done, info = self.test_env.step(action)
-				episode_reward += reward
 				
-				gt_reward = info['GT_reward']
+				episode_reward += reward
+				if self.gen_est_reward_test:
+					gt_reward = info['GT_reward']	# reward is estimated, GT reward is in info
+				else:
+					gt_reward = reward 				# Reward is already GT
 				reward_profit = reward-gt_reward
 				episode_reward_profit += reward_profit
 				episode_reward_abs_cum_error += np.abs(reward_profit)
@@ -133,6 +137,7 @@ class SAC_Solver():
 			avg_reward += episode_reward
 			avg_reward_profit += episode_reward_profit
 			avg_reward_error += episode_reward_abs_cum_error
+
 		avg_reward /= episodes
 		avg_reward_profit /= episodes
 		avg_reward_error /= episodes
@@ -144,7 +149,7 @@ class SAC_Solver():
 		self.test_err_mem.append((avg_reward_error, i_episode))
 
 		print("----------------------------------------")
-		print("Test Episodes: {}, Avg. Received Reward: {}, Avg. True Reward: {}, Avg. Reward Profit: {}".format(episodes, round(avg_reward, 2), round(avg_reward + avg_reward_profit, 2), round(avg_reward_profit, 2)))
+		print("Test Episodes: {}, Avg. Received Reward: {}, Avg. True Reward: {}, Avg. Reward Profit: {}".format(episodes, round(avg_reward, 2), round(avg_reward - avg_reward_profit, 2), round(avg_reward_profit, 2)))
 		print("----------------------------------------")		
 
 
@@ -227,8 +232,9 @@ class SAC_Solver():
 
 	def save_results(self):
 		np.save(self.test_res_path,self.test_mem)
-		np.save(self.test_rew_profit_path, self.test_prof_mem)
-		np.save(self.test_rew_error_path, self.test_err_mem)
+		if self.gen_est_reward_test:  # Only save these if test environment computes estimated reward (to avoid confusion)
+			np.save(self.test_rew_profit_path, self.test_prof_mem)
+			np.save(self.test_rew_error_path, self.test_err_mem)
 		np.save(self.train_res_path, self.reward_mem)
 		np.save(self.train_rew_profit_path, self.reward_profit_mem)
 		np.save(self.train_rew_error_path, self.reward_profit_mem)
@@ -243,6 +249,7 @@ if __name__ == '__main__':
 	parser.add_argument('-e','--environment',help='Testing environment', required=True)
 	parser.add_argument('-g','--generation_mode', help='Mode of image generation. Required for any training environment with "CNN" inside their name!', required = False, default = None)
 	parser.add_argument('-n','--model_name', help='CNN model name from which the environment predicts the reward. Required for any training environment with "CNN" inside their name!', required = False, default = None)
+	parser.add_argument('-r','--gen_est_reward_test', help='Specify -r to generate the estimated reward during testing (may make the training longer)', action = 'store_true')
 	args = parser.parse_args()
 	
 	computer = ut.getComputer(args.computer)
@@ -250,6 +257,7 @@ if __name__ == '__main__':
 	env_name = ut.getTrainEnv(args.train_environment)
 	gen_mode = ut.getGenMode(args.generation_mode)
 	model_name = ut.getModelName(args.model_name)
+	gen_est_reward_test = args.gen_est_reward_test
 
 	config = ut.loadYAMLFromFile('config_' + test_env_name + '.yaml')
 
@@ -259,6 +267,7 @@ if __name__ == '__main__':
 	### Environments
 	config['rl']['env_name'] = env_name
 	config['rl']['test_env_name'] = test_env_name
+	config['rl']['gen_est_reward_test'] = gen_est_reward_test
 	### Changing temp_root if necessary
 	temp_root = ''
 	if computer == 'mila':
@@ -486,26 +495,29 @@ if __name__ == '__main__':
 #		env = env = gym.make('HalfCheetah-v2')
 
 	else:
-		raise ValueError('Environment name {} as written in config.yaml is unknown.'.format(env_name))
+		raise ValueError('Environment name {} is unknown.'.format(env_name))
 	print("Training environment initialized.")
 
 	### Testing environment
-	if test_env_name == "cartpole":
-		test_env = gym.make('CartPole-v0')
-		test_env = ContinuousActionWrapperCartpole(test_env)
-		test_env = DenseRewardWrapperCartpole(test_env)
-		test_env = GTDenseRewardInfoWrapperCartpole(test_env)
-	elif test_env_name == 'duckietown':
-		test_env = DuckietownEnv()
-		test_env = DTDroneImageGenerator(test_env)
-		test_env = DTDistAngleObsWrapper(test_env)
-		test_env = DTLaneFollowingRewardWrapper(test_env)
-		test_env = DTConstantVelWrapper(test_env)
-		test_env = GTDenseRewardInfoWrapperDT(test_env)
-	elif test_env_name == 'duckietown_cam':
-		test_env = DTConstantVelWrapper(DTLaneFollowingRewardWrapper(DTDroneImageGenerator(DuckietownEnv())))#DTLaneFollowingRewardWrapper(DuckietownEnv())#
+	if gen_est_reward_test:
+		test_env = env 
 	else:
-		raise ValueError('Test Environment name {} as written in config.yaml is unknown or unexpected (should be CP_GT_Reward).'.format(env_name))
+		if test_env_name == "cartpole":
+			test_env = gym.make('CartPole-v0')
+			test_env = ContinuousActionWrapperCartpole(test_env)
+			test_env = DenseRewardWrapperCartpole(test_env)
+			test_env = GTDenseRewardInfoWrapperCartpole(test_env)
+		elif test_env_name == 'duckietown':
+			test_env = DuckietownEnv()
+			test_env = DTDroneImageGenerator(test_env)
+			test_env = DTDistAngleObsWrapper(test_env)
+			test_env = DTLaneFollowingRewardWrapper(test_env)
+			test_env = DTConstantVelWrapper(test_env)
+			test_env = GTDenseRewardInfoWrapperDT(test_env)
+		elif test_env_name == 'duckietown_cam':
+			test_env = DTConstantVelWrapper(DTLaneFollowingRewardWrapper(DTDroneImageGenerator(DuckietownEnv())))#DTLaneFollowingRewardWrapper(DuckietownEnv())#
+		else:
+			raise ValueError('Test Environment name {} is unknown or unexpected (should be CP_GT_Reward).'.format(env_name))
 
 	trainer = SAC_Solver(env, test_env, config_path, config['rl'])#env_name = 'CartPole-v0')
 	print("Initialized trainer")
