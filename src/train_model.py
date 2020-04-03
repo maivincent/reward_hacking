@@ -57,6 +57,8 @@ class ImageLabelDataset(Dataset):
             label = [x, theta, drone_angle]
         elif self.label_style == 'droneAngle':
             label = [drone_angle]
+        else:
+            assert False # TODO: dk_ stuff
         label = NormalizeLabel(self.env, self.label_style, label)
         label = torch.FloatTensor(label)    
         image = cv2.imread(img_name)
@@ -277,6 +279,43 @@ class Net(nn.Module):
         return x
 
 
+class RewardFunctionHeadCartPole(nn.Module):
+    def __init__(self):
+        super(RewardFunctionHeadCartPole, self).__init__()
+
+    def forward(self, x):
+        #print(x)
+        theta = x[:,:1]
+        x = x[:,1:]
+        reward = 1 - (3*torch.abs(theta/.5)/4) - (torch.abs(x/2.5)/2)**2
+        #print(reward)
+        #import pdb; pdb.set_trace()
+        return reward # shape = (bs, 1)
+
+
+class RewardFunctionHeadDuckieTown(nn.Module):
+    def __init__(self):
+        super(RewardFunctionHeadDuckieTown, self).__init__()
+
+    def forward(self, x):
+        dist = x[:,:1]
+        angle = x[:,1:]
+        reward = 1 - 1/2*torch.abs(angle) - 1/2*torch.abs(dist/0.15)**2
+        return reward # shape = (bs, 1)
+
+
+class RewardFunctionHeadModel(nn.Module):
+    def __init__(self, net, head):
+        super(RewardFunctionHeadModel, self).__init__()
+        self.net = net
+        self.head = head
+
+    def forward(self, x):
+        x = self.net(x)
+        x = self.head(x)
+        return x
+
+
 #################################################
 #                    Trainer                     #
 #################################################
@@ -338,6 +377,14 @@ class Trainer():
 
         if self.model == 'small':
             net = Net(input_size = self.rescale_size, nb_outputs = nb_outputs)
+        elif self.model == 'dk_resnet18_CP':
+            nb_outputs = 2 # FIXME: hard coded
+            reward_fn_head = RewardFunctionHeadCartPole()
+            net = RewardFunctionHeadModel(models.resnet18(pretrained=False, num_classes=nb_outputs), reward_fn_head)
+        elif self.model == 'dk_resnet18_DT':
+            nb_outputs = 2 # FIXME: hard coded
+            reward_fn_head = RewardFunctionHeadDuckieTown()
+            net = RewardFunctionHeadModel(models.resnet18(pretrained=False, num_classes=nb_outputs), reward_fn_head)
         elif self.model == 'resnet18':
             net = models.resnet18(pretrained=False, num_classes=nb_outputs)    
             #### To use in case want the pretrained model: (remove num_classes as pretrained model only comes with original 1000 classes)

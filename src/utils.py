@@ -306,7 +306,8 @@ def getLabelType(label_type):
 	'Angle',
 	'Angle_droneAngle',
 	'State_droneAngle',
-	'droneAngle']
+	'droneAngle',
+    'dk_cartpole']
 	if not label_type in list_labels:
 		raise ValueError('Wrong label type as argument -l. Options are: {}'.format(list_labels))
 	return label_type
@@ -351,6 +352,8 @@ def getModelName(model_name):
 def getModel(model):
 	list_models = [None,
 	 'small',   # small homemade model
+	 'dk_resnet18_CP',
+	 'dk_resnet18_DT',
 	 'resnet18',
 	 'resnet34',
 	 'resnet50',
@@ -380,6 +383,10 @@ def nbOutputs(label_style, env_name):
 		nb_outputs = 4
 	elif label_style == 'State_droneAngle':
 		nb_outputs = 5
+	elif label_style == 'dk_DP':
+		nb_outputs = 2
+	elif label_style == 'dk_DT':
+		nb_outputs = 2
 	return nb_outputs
 
 #################################
