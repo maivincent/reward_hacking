@@ -335,6 +335,8 @@ class Trainer():
         self.training_set_path = config_path['training_set_path']
         self.testing_set_path = config_path['testing_set_path']
         self.cnn_params_path = config_path['cnn_params_path']
+        self.train_losses_path = config_path['cnn_train_losses_path']
+        self.test_losses_path = config_path['cnn_test_losses_path']
 
              # should not be needed ut.makeDir(self.training_data_path)
 
@@ -362,6 +364,8 @@ class Trainer():
         del dataset_stats # Takes a lot of memory
         self.train_set = self.load_data(self.training_set_path, batch_size, shuffle)
         self.test_set = self.load_data(self.testing_set_path, 1, shuffle)
+        self.train_losses = []
+        self.test_losses = []
 
 
     def load_data(self, path, batch_size, shuffle):
@@ -474,6 +478,8 @@ class Trainer():
             if i % sp_disp == 0 and i != 0:
                 writer.add_scalar('train_loss', running_loss/sp_disp, i + self.nb_batches*epoch_nb)
                 print('[{}] Train loss: {}'.format(i + self.nb_batches*epoch_nb, running_loss/sp_disp))
+                self.train_losses.append([i, running_loss/sp_disp])
+
                 if running_loss/sp_disp <= 0.0001:
                     print("Small running_loss: training finished")
                     torch.save(self.net.state_dict(), self.model_path)
@@ -488,7 +494,13 @@ class Trainer():
             sp_test = 50
             if i % sp_test == sp_test - 1:
                 test_loss = self.test()
+                self.test_losses.append([i, test_loss])
                 writer.add_scalar('test_loss', test_loss, i + self.nb_batches*epoch_nb)
+
+            # Saving learning results
+            sp_save_res = 100
+            if i % sp_save_res == sp_save_res - 1:
+                self.save_results()
 
             # Saving intermediate
             sp_save = 10000
@@ -499,6 +511,10 @@ class Trainer():
         torch.save(self.net.state_dict(), self.model_path)
         print("Epoch done - Model saved.")
         return False
+
+    def save_results(self):
+    	np.save(self.train_losses_path, self.train_losses)
+    	np.save(self.test_losses_path, self.test_losses)
 
     def test(self):
         print('-----')
@@ -588,12 +604,16 @@ if __name__ == '__main__':
     cnn_latest_model_path = os.path.join(use_cnn_label_path, 'latest_model.pth')
     cnn_inter_model_path = os.path.join(use_cnn_label_path, 'inter_models')
     cnn_params_path = os.path.join(use_cnn_label_path, 'cnn_params.yaml')
+    cnn_train_losses_path = os.path.join(use_cnn_label_path, 'train_losses.npy')
+    cnn_test_losses_path = os.path.join(use_cnn_label_path, 'test_losses.npy')
     ut.makeDir(cnn_training_data_path)
     ut.makeDir(cnn_inter_model_path)
     config_path['training_data_path'] = cnn_training_data_path
     config_path['model_path'] = cnn_latest_model_path
     config_path['inter_model_path'] = cnn_inter_model_path
     config_path['cnn_params_path'] = cnn_params_path
+    config_path['cnn_train_losses_path'] = cnn_train_losses_path
+    config_path['cnn_test_losses_path'] = cnn_test_losses_path
 
     ### Image dataset path
     use_images_path = os.path.join(temp_root, config['paths'][computer]['images'])
