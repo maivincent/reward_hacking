@@ -7,7 +7,7 @@ import argparse
 import utils
 import time
 import sys
-from cartpole_mod_env import ImGenDenseRewardWrapperCartpole
+from cartpole_mod_env import *
 from duckietown_mod_env import *
 
 class image_generator():
@@ -17,7 +17,10 @@ class image_generator():
 		self.image_height = config['image']['height']
 		self.image_width = config['image']['width']  # From render function of Cartpole env
 		if environment == 'cartpole':
-			self.env = ImGenDenseRewardWrapperCartpole(gym.make("CartPole-v1"))    # This wrapper allows saving the image and the associated reward
+			if gen_mode == 'random':
+				self.env = DenseRewardWrapperCartpole(ImGenDenseRewardWrapperCartpole(gym.make("CartPole-v1")))    # This wrapper allows saving the image and the associated reward
+			elif gen_mode == 'random_weird':
+				self.env = WeirdDenseRewardWrapperCartpole(ImGenDenseRewardWrapperCartpole(gym.make("CartPole-v1")))    # This wrapper allows saving the image and the associated reward
 		elif environment == 'duckietown':
 			if gen_mode == 'random':
 				self.env = DTDistAngleObsWrapper(DTConstantVelWrapper(DTLaneFollowingRewardWrapper(DTDroneImageGenerator(DuckietownEnv(accept_start_angle_deg = 90), drone_sim = 'random', drone_angle_follow = True))))
@@ -104,7 +107,7 @@ class image_generator():
 			writer.writerow(['X', 'Theta','Reward', 'Image', 'Drone angle'])
 
 		# Create images
-		if gen_mode in ['random', 'random_0', 'random_1', 'random_2', 'random_3', 'random_straight', 'random_0_straight', 'random_1_straight', 'random_2_straight', 'random_3_straight']:
+		if gen_mode in ['random', 'random_weird', 'random_0', 'random_1', 'random_2', 'random_3', 'random_straight', 'random_0_straight', 'random_1_straight', 'random_2_straight', 'random_3_straight']:
 			for i in range(number_images):
 				if i%100 == 99:
 					print(i)

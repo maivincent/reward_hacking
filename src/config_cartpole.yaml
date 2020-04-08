@@ -27,7 +27,7 @@ image :
   width : 600
 
 exp:
-  nb_test_im : 10000
+  nb_test_im : 2000
   nb_train_im : 10000
 
 cnn:

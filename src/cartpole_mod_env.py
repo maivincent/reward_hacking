@@ -138,6 +138,9 @@ def state2reward(x, theta):
 	reward = 1 - (3*np.abs(theta/.5)/4) - (np.abs(x/2.5)/2)**2
 	return reward
 
+def weird_state2reward(x, theta):
+	reward = np.sin(40*theta)*np.cos(5*x)*np.arctan(24*x*theta)
+	return reward
 
 class DenseRewardWrapperCartpole(gym.Wrapper):
 	# Generating dense reward based on the state (different from original problem)
@@ -151,6 +154,20 @@ class DenseRewardWrapperCartpole(gym.Wrapper):
 		x = self.state[0]
 		theta = self.state[2]
 		return state2reward(x, theta)
+
+class WeirdDenseRewardWrapperCartpole(gym.Wrapper):
+	# Generating dense reward based on the state (different from original problem)
+
+	def step(self, action):
+		observation, reward, done, info = self.env.step(action)
+		info = {}
+		return observation, self.reward(observation), done, info
+
+	def reward(self, obs):
+		x = self.state[0]
+		theta = self.state[2]
+		return weird_state2reward(x, theta)
+
 
 class NoisyDenseRewardWrapperCartpole(gym.Wrapper):
 	# Generating dense reward based on the state (different from original problem)
@@ -168,7 +185,7 @@ class NoisyDenseRewardWrapperCartpole(gym.Wrapper):
 		reward = state2reward(self.state[0], self.state[2]) + np.random.normal(loc=0.0, scale=self.std_dev)
 		return reward
 
-class ImGenDenseRewardWrapperCartpole(DenseRewardWrapperCartpole):
+class ImGenDenseRewardWrapperCartpole(gym.Wrapper):
 	# Generating reward based on the state as its parent class, plus has a function to generate a random state, and allows to render and save an image
 
 	def __init__(self, env):
@@ -385,3 +402,4 @@ class GTDenseRewardInfoWrapperCartpole(gym.Wrapper):
 		gt_reward = state2reward(x, theta)
 		info['GT_reward'] = gt_reward
 		return observation, reward, done, info
+

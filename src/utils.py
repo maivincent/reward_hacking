@@ -316,6 +316,7 @@ def getGenMode(gen_mode):
 	list_modes = [None,
 	 'None',
 	 'random',
+	 'random_weird',
 	 'training',
 	 'incremental',
 	 'random_0',		#random_0 is for Duckietown env only - Duckiebot in center and 
@@ -354,6 +355,7 @@ def getModel(model):
 	 'small',   # small homemade model
 	 'dk_resnet18_CP',
 	 'dk_resnet18_DT',
+	 'dk_resnet18_CP_weird',
 	 'resnet18',
 	 'resnet34',
 	 'resnet50',

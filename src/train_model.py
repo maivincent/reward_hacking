@@ -292,6 +292,18 @@ class RewardFunctionHeadCartPole(nn.Module):
         #import pdb; pdb.set_trace()
         return reward # shape = (bs, 1)
 
+class WeirdRewardFunctionHeadCartPole(nn.Module):
+    def __init__(self):
+        super(WeirdRewardFunctionHeadCartPole, self).__init__()
+
+    def forward(self, x):
+        #print(x)
+        theta = x[:,:1]
+        x = x[:,1:]
+        reward = torch.sin(40*theta)*torch.cos(5*x)*torch.atan(24*x*theta)
+        #print(reward)
+        #import pdb; pdb.set_trace()
+        return reward # shape = (bs, 1)			
 
 class RewardFunctionHeadDuckieTown(nn.Module):
     def __init__(self):
@@ -384,6 +396,10 @@ class Trainer():
         elif self.model == 'dk_resnet18_CP':
             nb_outputs = 2 # FIXME: hard coded
             reward_fn_head = RewardFunctionHeadCartPole()
+            net = RewardFunctionHeadModel(models.resnet18(pretrained=False, num_classes=nb_outputs), reward_fn_head)
+        elif self.model == 'dk_resnet18_CP_weird':
+            nb_outputs = 2 # FIXME: hard coded
+            reward_fn_head = WeirdRewardFunctionHeadCartPole()
             net = RewardFunctionHeadModel(models.resnet18(pretrained=False, num_classes=nb_outputs), reward_fn_head)
         elif self.model == 'dk_resnet18_DT':
             nb_outputs = 2 # FIXME: hard coded
