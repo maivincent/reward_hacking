@@ -28,7 +28,7 @@ image :
 
 exp:
   nb_test_im : 2000
-  nb_train_im : 10000
+  nb_train_im : 100000
 
 cnn:
   rescale_size : [32, 32]

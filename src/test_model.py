@@ -18,10 +18,11 @@ import torch.optim as optim
 
 import utils as ut
 import argparse
-from train_model import Net, ImageLabelDataset, Rescale, ToTensor, UnnormalizeLabel
+from train_model import Net, ImageLabelDataset, Rescale, ToTensor, UnnormalizeLabel, RewardFunctionHeadCartPole, WeirdRewardFunctionHeadCartPole, RewardFunctionHeadDuckieTown
 import cartpole_mod_env as cp_modenv
 import duckietown_mod_env as dt_modenv
 import resnet
+import torchvision.models as models
 
 
 #################################################
@@ -76,18 +77,34 @@ class Tester(object):
 		# Load the model as defined by ` self.trained_model_prefix + "latest_model.pth" ` and already trained by train_model.py
 		nb_outputs = ut.nbOutputs(self.label_style, self.environment)
 		
-		if self.model_type == 'small':
-			net = Net(input_size = self.rescale_size, nb_outputs = nb_outputs)
-		elif self.model_type == 'resnet18':
-			net = resnet.ResNet(resnet.BasicBlock, [2, 2, 2, 2], num_classes=nb_outputs)
-		elif self.model_type == 'resnet34':
-			net = resnet.ResNet(resnet.BasicBlock, [3, 4, 6, 3], num_classes=nb_outputs)
-		elif self.model_type == 'resnet50':
-			net = resnet.ResNet(resnet.Bottleneck, [3, 4, 6, 3], num_classes=nb_outputs)
-		elif self.model_type == 'resnet101':
-			net = resnet.ResNet(resnet.Bottleneck, [3, 4, 23, 3], num_classes=nb_outputs)
-		elif self.model_type == 'resnet152':
-			net = resnet.ResNet(resnet.Bottleneck, [3, 8, 36, 3], num_classes=nb_outputs)
+        if self.model == 'small':
+            net = Net(input_size = self.rescale_size, nb_outputs = nb_outputs)
+        elif self.model == 'dk_resnet18_CP':
+            nb_outputs = 2 # FIXME: hard coded
+            reward_fn_head = RewardFunctionHeadCartPole()
+            net = RewardFunctionHeadModel(models.resnet18(pretrained=False, num_classes=nb_outputs), reward_fn_head)
+        elif self.model == 'dk_resnet18_CP_weird':
+            nb_outputs = 2 # FIXME: hard coded
+            reward_fn_head = WeirdRewardFunctionHeadCartPole()
+            net = RewardFunctionHeadModel(models.resnet18(pretrained=False, num_classes=nb_outputs), reward_fn_head)
+        elif self.model == 'dk_resnet18_DT':
+            nb_outputs = 2 # FIXME: hard coded
+            reward_fn_head = RewardFunctionHeadDuckieTown()
+            net = RewardFunctionHeadModel(models.resnet18(pretrained=False, num_classes=nb_outputs), reward_fn_head)
+        elif self.model == 'resnet18':
+            net = models.resnet18(pretrained=False, num_classes=nb_outputs)    
+            #### To use in case want the pretrained model: (remove num_classes as pretrained model only comes with original 1000 classes)
+            # dim_feats = net.fc.in_features # =1000
+            # net.fc = nn.Linear(dim_feats, nb_outputs)  
+
+        elif self.model == 'resnet34':
+            net = resnet.resnet34(pretrained=False, num_classes=nb_outputs)    
+        elif self.model == 'resnet50':
+            net = resnet.ResNet(resnet.Bottleneck, [3, 4, 6, 3], num_classes=nb_outputs)
+        elif self.model == 'resnet101':
+            net = resnet.ResNet(resnet.Bottleneck, [3, 4, 23, 3], num_classes=nb_outputs)
+        elif self.model == 'resnet152':
+            net = resnet.ResNet(resnet.Bottleneck, [3, 8, 36, 3], num_classes=nb_outputs)
 
 		net.load_state_dict(torch.load(self.model_path))
 		print('Loaded model')
