@@ -319,6 +319,7 @@ def getGenMode(gen_mode):
 	 'random_weird',
 	 'training',
 	 'incremental',
+	 'incremental_weird',
 	 'random_0',		#random_0 is for Duckietown env only - Duckiebot in center and 
 	 'random_1',		#random_1 is for Duckietown env only - angle changes but Duckiebot in the center
 	 'random_2',
