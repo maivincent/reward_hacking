@@ -38,7 +38,13 @@ class Tester(object):
 		# Paths and configuration parameters
 		self.environment = config['exp']['env']
 		self.gen_mode = config['exp']['gen_mode']
-		test_set_gen_mode = 'incremental' if test_incremental else self.gen_mode
+		if test_incremental:
+			if self.gen_mode == 'random':
+				test_set_gen_mode = 'incremental'
+			elif self.gen_mode == 'random_weird':
+				test_set_gen_mode = 'incremental_weird'
+		else:
+			test_set_gen_mode = self.gen_mode
 		self.label_style = config['exp']['label_type']
 		model_name = config['exp']['model_name']
 		self.testing_set_path = os.path.join(config['paths'][computer]['save_images'], self.environment, test_set_gen_mode, 'test')
@@ -543,7 +549,7 @@ if __name__ == '__main__':
 	
 	config = ut.loadYAMLFromFile('config_' + environment + '.yaml')
 
-	if gen_mode == 'incremental':
+	if gen_mode == 'incremental' or gen_mode == 'incremental_weird':
 		raise ValueError("The generation mode cannot be incremental for test_model.py (there must be a related model to test). If you want to test on incrementally generated data, add argument -i True") 
 	test_incremental = args.test_incremental
 
