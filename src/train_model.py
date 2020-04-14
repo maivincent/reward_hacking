@@ -303,7 +303,7 @@ class WeirdRewardFunctionHeadCartPole(nn.Module):
         reward = torch.sin(40*theta)*torch.cos(5*x)*torch.atan(24*x*theta)
         #print(reward)
         #import pdb; pdb.set_trace()
-        return reward # shape = (bs, 1)			
+        return reward # shape = (bs, 1)         
 
 class RewardFunctionHeadDuckieTown(nn.Module):
     def __init__(self):
@@ -341,6 +341,7 @@ class Trainer():
 
         # Path configuration parameters
         self.training_data_path = config_path['training_data_path']
+        self.training_plots_path = config_path['training_plots_path']
         self.training_data_path = config_path['training_data_path']
         self.model_path = config_path['model_path']
         self.inter_model_path = config_path['inter_model_path']
@@ -360,12 +361,12 @@ class Trainer():
         self.nb_epochs = config_cnn['nb_epochs']
         learning_rate = config_cnn['learning_rate']
         print("Learning rate: {}".format(learning_rate))
-        batch_size = config_cnn['batch_size']
+        self.batch_size = config_cnn['batch_size']
         shuffle = config_cnn['shuffle']
         self.rescale_size = tuple(config_cnn['rescale_size'])
         assert self.rescale_size[0]%4 == 0 and self.rescale_size[1]%4==0   # Check that rescale_size is divisible by 4 (otherwise size computation does not work in the Net structure)
         nb_images = config_exp['nb_train_im']
-        self.nb_batches = int(nb_images/batch_size)
+        self.nb_batches = int(nb_images/self.batch_size)
 
         # CNN initialization
         self.net = self.initialize_net()
@@ -374,10 +375,13 @@ class Trainer():
         dataset_stats = DatasetStats(self.training_set_path)
         dataset_stats.saveStats(self.cnn_params_path)
         del dataset_stats # Takes a lot of memory
-        self.train_set = self.load_data(self.training_set_path, batch_size, shuffle)
+        self.train_set = self.load_data(self.training_set_path, self.batch_size, shuffle)
         self.test_set = self.load_data(self.testing_set_path, 1, shuffle)
         self.train_losses = []
         self.test_losses = []
+
+        # Others
+        self.drawer = ut.Drawer(self.training_plots_path + '/{}_CNN_{}'.format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), self.label_style))
 
 
     def load_data(self, path, batch_size, shuffle):
@@ -494,7 +498,7 @@ class Trainer():
             if i % sp_disp == 0 and i != 0:
                 writer.add_scalar('train_loss', running_loss/sp_disp, i + self.nb_batches*epoch_nb)
                 print('[{}] Train loss: {}'.format(i + self.nb_batches*epoch_nb, running_loss/sp_disp))
-                self.train_losses.append([i, running_loss/sp_disp])
+                self.train_losses.append([i + self.nb_batches*epoch_nb, running_loss/sp_disp])
 
                 if running_loss/sp_disp <= 0.0001:
                     print("Small running_loss: training finished")
@@ -510,7 +514,7 @@ class Trainer():
             sp_test = 50
             if i % sp_test == sp_test - 1:
                 test_loss = self.test()
-                self.test_losses.append([i, test_loss])
+                self.test_losses.append([i + self.nb_batches*epoch_nb, test_loss])
                 writer.add_scalar('test_loss', test_loss, i + self.nb_batches*epoch_nb)
 
             # Saving learning results
@@ -529,8 +533,18 @@ class Trainer():
         return False
 
     def save_results(self):
-    	np.save(self.train_losses_path, self.train_losses)
-    	np.save(self.test_losses_path, self.test_losses)
+        np.save(self.train_losses_path, self.train_losses)
+        np.save(self.test_losses_path, self.test_losses)
+        self.save_plot(self.train_losses, 'train')
+        self.save_plot(self.test_losses, 'test')
+
+    def save_plot(self, loss_array, mode):
+        loss_array = np.array(loss_array)
+        if mode == 'train':
+            plot_title = 'Train loss over training time'
+        elif mode == 'test':
+            plot_title = 'Test loss over training time'
+        self.drawer.savePlotPNG(loss_array[:,0], loss_array[:,1], 'Steps (batch size: ­{})'.format(self.batch_size), 'Loss', plot_title)
 
     def test(self):
         print('-----')
@@ -617,14 +631,17 @@ if __name__ == '__main__':
     use_cnn_path = os.path.join(temp_root, config['paths'][computer]['cnn'])
     use_cnn_label_path = os.path.join(use_cnn_path, environment, label_type, gen_mode, model_name)
     cnn_training_data_path = os.path.join(use_cnn_label_path, 'training_data')
+    cnn_training_plots_path = os.path.join(cnn_training_data_path, 'plots')
     cnn_latest_model_path = os.path.join(use_cnn_label_path, 'latest_model.pth')
     cnn_inter_model_path = os.path.join(use_cnn_label_path, 'inter_models')
     cnn_params_path = os.path.join(use_cnn_label_path, 'cnn_params.yaml')
     cnn_train_losses_path = os.path.join(use_cnn_label_path, 'train_losses.npy')
     cnn_test_losses_path = os.path.join(use_cnn_label_path, 'test_losses.npy')
     ut.makeDir(cnn_training_data_path)
+    ut.makeDir(cnn_training_plots_path)
     ut.makeDir(cnn_inter_model_path)
     config_path['training_data_path'] = cnn_training_data_path
+    config_path['training_plots_path'] = cnn_training_plots_path
     config_path['model_path'] = cnn_latest_model_path
     config_path['inter_model_path'] = cnn_inter_model_path
     config_path['cnn_params_path'] = cnn_params_path
