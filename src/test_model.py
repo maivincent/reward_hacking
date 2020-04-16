@@ -70,6 +70,10 @@ class Tester(object):
 		# Loading data
 		self.test_set = self.load_data()
 
+	def set_test_results_path(self, new_path):
+		self.test_results_path = new_path
+		ut.makeDir(self.test_results_path)
+		
 	def load_data(self):
 		# Load data from the data set given by ` prefix + label_style + "data_pairs.csv" ` produced beforehand by generate_images.py
 		# And apply transforms of rescaling and passing to pytorch tensor formatcomposed_transform = transforms.Compose([Rescale((32, 32)), ToTensor()])
@@ -279,15 +283,18 @@ class Tester(object):
 		n, _, _ = plt.hist(losses, bins=50, density = True, range = (0, 0.15))
 		plt.title("Loss histogram for {}-predicting model".format(self.label_style))
 		plt.savefig(self.test_results_path + "/loss_histogram.png", bbox_inches="tight")
+		plt.close()
 
 		plt.figure()
 		n, _, _ = plt.hist(rew_errors, bins=100, density =True, color="blue", ec="black", range = (-0.5, 0.5))
 		plt.title("Reward error histogram for {}-predicting model".format(self.label_style))
 		plt.savefig(self.test_results_path + "/rew_err_histogram.png", bbox_inches="tight")
+		plt.close()
 
 		plt.figure()
 		fig, ax = plt.subplots()
 		normalize = colors.DivergingNorm(0)
+		plt.close()
 
 		plt.scatter(xs, thetas, c=rew_errors, norm=normalize, cmap ='seismic')
 		ax.set_xlabel('Position X')
@@ -295,6 +302,7 @@ class Tester(object):
 		cbar = plt.colorbar()
 		cbar.set_label('Reward error')
 		plt.savefig(self.test_results_path + "/rew_error_3Dplat.png", bbox_inches="tight")
+		plt.close()
 
 		plt.figure()
 		fig, ax = plt.subplots()
@@ -304,6 +312,7 @@ class Tester(object):
 		cbar = plt.colorbar()
 		cbar.set_label('Absolute reward error')
 		plt.savefig(self.test_results_path + "/abs_rew_error_3Dplat.png", bbox_inches="tight")
+		plt.close()
 
 		plt.figure()
 		fig, ax = plt.subplots()
@@ -313,6 +322,7 @@ class Tester(object):
 		cbar = plt.colorbar()
 		cbar.set_label('Estimated reward')
 		plt.savefig(self.test_results_path + "/estim_rew_3Dplat.png", bbox_inches="tight")
+		plt.close()
 
 		plt.figure()
 		fig, ax = plt.subplots()
@@ -322,6 +332,7 @@ class Tester(object):
 		cbar = plt.colorbar()
 		cbar.set_label('Ground truth reward')
 		plt.savefig(self.test_results_path + "/real_rew_3Dplat.png", bbox_inches="tight")
+		plt.close()
 
 
 		if self.label_style == "State":
@@ -333,11 +344,13 @@ class Tester(object):
 			n, _, _ = plt.hist(theta_errors, bins=100, density = True, color="skyblue", ec="black")
 			plt.title("Angle error histogram for {}-predicting model".format(self.label_style))
 			plt.savefig(self.test_results_path + "/angle_err_histogram.png", bbox_inches="tight")
+			plt.close()
 
 			plt.figure()
 			n, _, _ = plt.hist(x_errors, bins=100, density = True, color="skyblue", ec="black")
 			plt.title("Position error histogram for {}-predicting model".format(self.label_style))
 			plt.savefig(self.test_results_path + "/pos_err_histogram.png", bbox_inches="tight")
+			plt.close()
 
 			plt.figure()
 			fig, ax = plt.subplots()
@@ -347,6 +360,7 @@ class Tester(object):
 			cbar = plt.colorbar()
 			cbar.set_label('Theta error')
 			plt.savefig(self.test_results_path + "/theta_error_3Dplat.png", bbox_inches="tight")
+			plt.close()
 
 			plt.figure()
 			fig, ax = plt.subplots()
@@ -356,6 +370,7 @@ class Tester(object):
 			cbar = plt.colorbar()
 			cbar.set_label('X error')
 			plt.savefig(self.test_results_path + "/x_errors_3Dplat.png", bbox_inches="tight")
+			plt.close()
 
 		elif self.label_style == "State_droneAngle":
 			state_errors_np = np.array(state_errors)
@@ -367,16 +382,19 @@ class Tester(object):
 			n, _, _ = plt.hist(theta_errors, bins=100, density = True, color="skyblue", ec="black")
 			plt.title("Angle error histogram for {}-predicting model".format(self.label_style))
 			plt.savefig(self.test_results_path + "/angle_err_histogram.png", bbox_inches="tight")
+			plt.close()
 
 			plt.figure()
 			n, _, _ = plt.hist(x_errors, bins=100, density = True, color="skyblue", ec="black")
 			plt.title("Position error histogram for {}-predicting model".format(self.label_style))
 			plt.savefig(self.test_results_path + "/pos_err_histogram.png", bbox_inches="tight")
+			plt.close()
 
 			plt.figure()
 			n, _, _ = plt.hist(drone_angle_errors, bins=100, density = True, color="skyblue", ec="black")
 			plt.title("Drone angle error histogram for {}-predicting model".format(self.label_style))
 			plt.savefig(self.test_results_path + "/drone_angle_err_histogram.png", bbox_inches="tight")
+			plt.close()
 
 			plt.figure()
 			fig, ax = plt.subplots()
@@ -386,6 +404,7 @@ class Tester(object):
 			cbar = plt.colorbar()
 			cbar.set_label('Theta error')
 			plt.savefig(self.test_results_path + "/theta_error_3Dplat.png", bbox_inches="tight")
+			plt.close()
 
 			plt.figure()
 			fig, ax = plt.subplots()
@@ -395,6 +414,7 @@ class Tester(object):
 			cbar = plt.colorbar()
 			cbar.set_label('X error')
 			plt.savefig(self.test_results_path + "/x_errors_3Dplat.png", bbox_inches="tight")
+			plt.close()
 
 			plt.figure()
 			fig, ax = plt.subplots()
@@ -404,6 +424,7 @@ class Tester(object):
 			cbar = plt.colorbar()
 			cbar.set_label('Drone angle error')
 			plt.savefig(self.test_results_path + "/drone_angle_errors_3Dplat.png", bbox_inches="tight")
+			plt.close()
 
 		elif self.label_style == 'Distance':
 			state_errors_np = np.array(state_errors)
@@ -413,6 +434,7 @@ class Tester(object):
 			n, _, _ = plt.hist(x_errors, bins=100, density = True, color="skyblue", ec="black")
 			plt.title("Position error histogram for {}-predicting model".format(self.label_style))
 			plt.savefig(self.test_results_path + "/pos_err_histogram.png", bbox_inches="tight")
+			plt.close()
 
 			plt.figure()
 			fig, ax = plt.subplots()
@@ -422,6 +444,7 @@ class Tester(object):
 			cbar = plt.colorbar()
 			cbar.set_label('X error')
 			plt.savefig(self.test_results_path + "/x_errors_3Dplat.png", bbox_inches="tight")
+			plt.close()
 
 		elif self.label_style == 'Angle':
 			state_errors_np = np.array(state_errors)
@@ -431,6 +454,7 @@ class Tester(object):
 			n, _, _ = plt.hist(theta_errors, bins=100, density = True, color="skyblue", ec="black")
 			plt.title("Angle error histogram for {}-predicting model".format(self.label_style))
 			plt.savefig(self.test_results_path + "/angle_err_histogram.png", bbox_inches="tight")
+			plt.close()
 
 			plt.figure()
 			fig, ax = plt.subplots()
@@ -440,6 +464,7 @@ class Tester(object):
 			cbar = plt.colorbar()
 			cbar.set_label('Theta error')
 			plt.savefig(self.test_results_path + "/theta_error_3Dplat.png", bbox_inches="tight")
+			plt.close()
 
 		elif self.label_style == "Angle_droneAngle":
 			state_errors_np = np.array(state_errors)
@@ -450,11 +475,13 @@ class Tester(object):
 			n, _, _ = plt.hist(theta_errors, bins=100, density = True, color="skyblue", ec="black")
 			plt.title("Angle error histogram for {}-predicting model".format(self.label_style))
 			plt.savefig(self.test_results_path + "/angle_err_histogram.png", bbox_inches="tight")
+			plt.close()
 
 			plt.figure()
 			n, _, _ = plt.hist(drone_angle_errors, bins=100, density = True, color="skyblue", ec="black")
 			plt.title("Drone angle error histogram for {}-predicting model".format(self.label_style))
 			plt.savefig(self.test_results_path + "/drone_angle_err_histogram.png", bbox_inches="tight")
+			plt.close()
 
 			plt.figure()
 			fig, ax = plt.subplots()
@@ -464,6 +491,7 @@ class Tester(object):
 			cbar = plt.colorbar()
 			cbar.set_label('Theta error')
 			plt.savefig(self.test_results_path + "/theta_error_3Dplat.png", bbox_inches="tight")
+			plt.close()
 
 			plt.figure()
 			fig, ax = plt.subplots()
@@ -473,6 +501,7 @@ class Tester(object):
 			cbar = plt.colorbar()
 			cbar.set_label('X error')
 			plt.savefig(self.test_results_path + "/x_errors_3Dplat.png", bbox_inches="tight")
+			plt.close()
 
 			plt.figure()
 			fig, ax = plt.subplots()
@@ -482,6 +511,7 @@ class Tester(object):
 			cbar = plt.colorbar()
 			cbar.set_label('Drone angle error')
 			plt.savefig(self.test_results_path + "/drone_angle_errors_3D_dt.png", bbox_inches="tight")
+			plt.close()
 
 			plt.figure()
 			fig, ax = plt.subplots()
@@ -491,6 +521,7 @@ class Tester(object):
 			cbar = plt.colorbar()
 			cbar.set_label('Theta error')
 			plt.savefig(self.test_results_path + "/theta_errors_3D_dt.png", bbox_inches="tight")
+			plt.close()
 
 		elif self.label_style == "droneAngle":
 			state_errors_np = np.array(state_errors)
@@ -500,6 +531,7 @@ class Tester(object):
 			n, _, _ = plt.hist(drone_angle_errors, bins=100, density = True, color="skyblue", ec="black")
 			plt.title("Drone angle error histogram for {}-predicting model".format(self.label_style))
 			plt.savefig(self.test_results_path + "/drone_angle_err_histogram.png", bbox_inches="tight")
+			plt.close()
 
 			plt.figure()
 			fig, ax = plt.subplots()
@@ -509,6 +541,7 @@ class Tester(object):
 			cbar = plt.colorbar()
 			cbar.set_label('Drone angle error')
 			plt.savefig(self.test_results_path + "/drone_angle_errors_3D_dt.png", bbox_inches="tight")
+			plt.close()
 
 			
 		### Saving summary

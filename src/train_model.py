@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
+from test_model import *
 
 import torch.nn as nn
 import torch.nn.functional as F 
@@ -379,10 +380,18 @@ class Trainer():
         self.test_set = self.load_data(self.testing_set_path, 1, shuffle)
         self.train_losses = []
         self.test_losses = []
+        torch.save(self.net.state_dict(), self.model_path)
 
         # Others
         self.drawer = ut.Drawer(self.training_plots_path + '/{}_CNN_{}'.format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), self.label_style))
-
+        self.test_incremental = config_exp['test_incremental']
+        if self.test_incremental:
+            config = {}
+            config['exp'] = config_exp
+            config['exp']['env'] = config['exp']['environment']
+            config['paths'] = config_path
+            config['cnn'] = config_cnn
+            self.tester = Tester(config, self.computer, True)
 
     def load_data(self, path, batch_size, shuffle):
         composed_transform = transforms.Compose([Rescale(self.rescale_size), ToTensor()])
@@ -527,8 +536,12 @@ class Trainer():
             if i % sp_save == sp_save - 1:
                 torch.save(self.net.state_dict(), os.path.join(self.inter_model_path, 'model_{}.pth'.format(i + self.nb_batches*epoch_nb)))
 
-
         torch.save(self.net.state_dict(), self.model_path)
+        if self.test_incremental:
+            new_test_path = os.path.join(self.training_data_path, 'test_during_training', 'test_results_step_{}'.format(i + self.nb_batches*epoch_nb))
+            self.tester.set_test_results_path(new_test_path)
+            self.tester.net = self.tester.load_model()
+            self.tester.test_all_images()
         print("Epoch done - Model saved.")
         return False
 
@@ -598,6 +611,7 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--model_name', help='Name of the model. Should in the form: env_label_genmode_#. Ex: CP_R_rand_1.', required=True)
     parser.add_argument('-m', '--model', help='Type of the CNN model', required=True)
     parser.add_argument('-r', '--learning_rate', help='Learning rate', default=None)
+    parser.add_argument('-i', '--test_incremental', help='If specified, will test on incremental dataset', action = 'store_true')
     args = parser.parse_args()
     
     computer = ut.getComputer(args.computer)
@@ -607,19 +621,22 @@ if __name__ == '__main__':
     model_name = ut.getModelName(args.model_name)
     model = ut.getModel(args.model)
     learning_rate = args.learning_rate
-
+    test_incremental = args.test_incremental
 
     config = ut.loadYAMLFromFile('config_' + environment + '.yaml')
 
     config['exp']['computer'] = computer
     config['exp']['label_type'] = label_type
     config['exp']['environment'] = environment
+    config['exp']['test_incremental'] = test_incremental
+    config['exp']['gen_mode'] = gen_mode
+    config['exp']['model_name'] = model_name
     config['cnn']['model'] = model
     if learning_rate:
         config['cnn']['learning_rate'] = float(learning_rate)
 
     # Building config_path
-    config_path = {}
+    config_path = config['paths']
 
     ### Changing temp_root if necessary
     temp_root = ''
@@ -652,6 +669,13 @@ if __name__ == '__main__':
     use_images_path = os.path.join(temp_root, config['paths'][computer]['images'])
     training_set_path = os.path.join(use_images_path, environment, gen_mode, 'train')
     testing_set_path = os.path.join(use_images_path, environment, gen_mode, 'test')
+    if test_incremental:
+        if gen_mode == 'random_weird':
+            incremental_mode = 'incremental_weird' 
+        else: 
+            incremental_mode = 'incremental'
+        incremental_testing_set_path = os.path.join(use_images_path, environment, incremental_mode, 'test')
+        config_path['incremental_testing_set_path'] = incremental_testing_set_path
     config_path['training_set_path'] = training_set_path
     config_path['testing_set_path'] = testing_set_path
 
@@ -664,6 +688,9 @@ if __name__ == '__main__':
         save_images_root_path = config['paths'][computer]['save_images'] 
         save_train_images_path = os.path.join(save_images_root_path, environment, gen_mode, 'train')
         save_test_images_path = os.path.join(save_images_root_path, environment, gen_mode, 'test')
+        if test_incremental:
+            save_test_incremental_images_path = os.path.join(save_images_root_path, environment, incremental_mode, 'test')
+            ut.copyAndOverwrite(save_test_incremental_images_path, training_set_path)    
         ut.copyAndOverwrite(save_train_images_path, training_set_path)    
         ut.copyAndOverwrite(save_test_images_path, testing_set_path)    
         print("Copying images: done!")
