@@ -4,7 +4,7 @@ import numpy as np
 
 from gym import spaces
 import numpy as np 
-from train_model import Net, Rescale, NormalizeImage, UnnormalizeLabel
+from train_model import Rescale, NormalizeImage, UnnormalizeLabel
 import torch
 import torch.nn as nn
 import torchvision.models as models

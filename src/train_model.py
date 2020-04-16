@@ -359,7 +359,7 @@ class Trainer():
         self.drawer = ut.Drawer(self.training_plots_path + '/{}_CNN_{}'.format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), self.label_style))
         self.test_incremental = config_exp['test_incremental']
         if self.test_incremental:
-            from test_model import *
+            from test_model import Tester
             config = {}
             config['exp'] = config_exp
             config['exp']['env'] = config['exp']['environment']
