@@ -18,7 +18,7 @@ import torch.optim as optim
 
 import utils as ut
 import argparse
-from train_model import Net, ImageLabelDataset, Rescale, ToTensor, UnnormalizeLabel, RewardFunctionHeadCartPole, WeirdRewardFunctionHeadCartPole, RewardFunctionHeadDuckieTown, RewardFunctionHeadModel
+from train_model import ImageLabelDataset, Rescale, ToTensor, UnnormalizeLabel, RewardFunctionHeadCartPole, WeirdRewardFunctionHeadCartPole, RewardFunctionHeadDuckieTown, RewardFunctionHeadModel
 import cartpole_mod_env as cp_modenv
 import duckietown_mod_env as dt_modenv
 import resnet
@@ -87,9 +87,7 @@ class Tester(object):
 		# Load the model as defined by ` self.trained_model_prefix + "latest_model.pth" ` and already trained by train_model.py
 		nb_outputs = ut.nbOutputs(self.label_style, self.environment)
 		
-		if self.model_type == 'small':
-			net = Net(input_size = self.rescale_size, nb_outputs = nb_outputs)
-		elif self.model_type == 'dk_resnet18_CP':
+		if self.model_type == 'dk_resnet18_CP':
 			nb_outputs = 2 # FIXME: hard coded
 			reward_fn_head = RewardFunctionHeadCartPole()
 			net = RewardFunctionHeadModel(models.resnet18(pretrained=False, num_classes=nb_outputs), reward_fn_head)

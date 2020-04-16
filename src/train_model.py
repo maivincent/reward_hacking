@@ -254,32 +254,6 @@ class ToTensor(object):
 #                     Neural Net                    #
 #################################################
 
-
-
-class Net(nn.Module):
-    def __init__(self, input_size = [32, 32], nb_outputs = 1):
-        super(Net, self).__init__()
-        self.fc1_size = int(input_size[0]/4 * input_size[1]/4 * 16)
-
-        self.conv1 = nn.Conv2d(3,16,3, padding=1)
-        self.pool = nn.MaxPool2d(2,2)
-        self.conv2 = nn.Conv2d(16,16,3, padding=1)
-        self.fc1 = nn.Linear(self.fc1_size, 256)
-        self.fc2 = nn.Linear(256, 64)
-        self.fc3 = nn.Linear(64, 16)
-        self.fc4 = nn.Linear(16, nb_outputs)    
-
-    def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = x.view(-1, self.fc1_size)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
-        x = torch.sigmoid(self.fc4(x))
-        return x
-
-
 class RewardFunctionHeadCartPole(nn.Module):
     def __init__(self):
         super(RewardFunctionHeadCartPole, self).__init__()
@@ -404,9 +378,7 @@ class Trainer():
     def initialize_net(self):
         nb_outputs = ut.nbOutputs(self.label_style, self.environment)
 
-        if self.model == 'small':
-            net = Net(input_size = self.rescale_size, nb_outputs = nb_outputs)
-        elif self.model == 'dk_resnet18_CP':
+        if self.model == 'dk_resnet18_CP':
             nb_outputs = 2 # FIXME: hard coded
             reward_fn_head = RewardFunctionHeadCartPole()
             net = RewardFunctionHeadModel(models.resnet18(pretrained=False, num_classes=nb_outputs), reward_fn_head)
