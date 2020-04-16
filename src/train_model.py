@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
-from test_model import *
 
 import torch.nn as nn
 import torch.nn.functional as F 
@@ -360,6 +359,7 @@ class Trainer():
         self.drawer = ut.Drawer(self.training_plots_path + '/{}_CNN_{}'.format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), self.label_style))
         self.test_incremental = config_exp['test_incremental']
         if self.test_incremental:
+            from test_model import *
             config = {}
             config['exp'] = config_exp
             config['exp']['env'] = config['exp']['environment']
