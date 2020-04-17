@@ -204,3 +204,9 @@ local_results/cnn/cartpole/Reward/random_weird/CPWeird_Reg4/training_data/test_d
 local_results/cnn/cartpole/Reward/random_weird/CPWeird_Reg5/cnn_params.yaml
 
 local_results/cnn/cartpole/Reward/random_weird/CPWeird_Reg5/training_data/runs/2020-04-16_14-54-14_CNN_Reward/events.out.tfevents.1587063254.vincent-XPS-15-9570
+
+weird_bug_gymduckietown
+
+local_results/*
+
+cluster_results/*
