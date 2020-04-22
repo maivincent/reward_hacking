@@ -314,6 +314,7 @@ class Trainer():
         self.computer = config_exp['computer']
 
         # Path configuration parameters
+        self.config_path = config_path
         self.training_data_path = config_path['training_data_path']
         self.training_plots_path = config_path['training_plots_path']
         self.training_data_path = config_path['training_data_path']
@@ -354,6 +355,7 @@ class Trainer():
         self.train_losses = []
         self.test_losses = []
         torch.save(self.net.state_dict(), self.model_path)
+        copyResultsToSaveRepo(self.computer, self.config_path)
 
         # Others
         self.drawer = ut.Drawer(self.training_plots_path + '/{}_CNN_{}'.format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), self.label_style))
@@ -515,6 +517,7 @@ class Trainer():
             self.tester.net = self.tester.load_model()
             self.tester.test_all_images()
         print("Epoch done - Model saved.")
+        copyResultsToSaveRepo(self.computer, self.config_path)
         return False
 
     def save_results(self):
@@ -571,6 +574,16 @@ class Trainer():
 #################################################
 #                     Main                         #
 #################################################        
+### Copying results to save repo
+def copyResultsToSaveRepo(computer, config_path):
+    print('CopyResultsToSaveRepo()')
+    if computer == 'mila':
+        # Copying CNN model from local disck to save repo (tmp1/maivincent)
+        use_cnn_path = config_path[computer]['use_cnn_path']
+        save_cnn_path = config_path[computer]['save_cnn']
+        ut.copyAndOverwrite(use_cnn_path, save_cnn_path)
+        print("Copying results: done!")
+
 
 if __name__ == '__main__':
     # Loading general config file
@@ -629,6 +642,7 @@ if __name__ == '__main__':
     ut.makeDir(cnn_training_data_path)
     ut.makeDir(cnn_training_plots_path)
     ut.makeDir(cnn_inter_model_path)
+    config_path['use_cnn_path'] = use_cnn_path
     config_path['training_data_path'] = cnn_training_data_path
     config_path['training_plots_path'] = cnn_training_plots_path
     config_path['model_path'] = cnn_latest_model_path
@@ -684,9 +698,4 @@ if __name__ == '__main__':
     
     writer.close()
 
-    ### Copying results to save repo
-    if computer == 'mila':
-        # Copying CNN model from local disck to save repo (tmp1/maivincent)
-        save_cnn_path = config['paths'][computer]['save_cnn']
-        ut.copyAndOverwrite(use_cnn_path, save_cnn_path)
-        print("Copying results: done!")
+    copyResultsToSaveRepo(computer, config_path)
