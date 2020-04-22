@@ -43,10 +43,10 @@ rl:
   policy : "Gaussian"               # algorithm to use: Gaussian | Deterministic
   eval_ : True                      # evaluates a policy a policy every 10 episode
   gamma : 0.99                      # discount factor for reward 
-  tau : 0.005                       # target smoothing coefficient(τ)
+  tau : 0.005                       # target smoothing coefficient
   lr : 0.0003                       # learning rate 
-  alpha : 0.2                       # temperature parameter α determines the relative importance of the entropy term against the reward
-  automatic_entropy_tuning : True   # temperature parameter α automaically adjusted.
+  alpha : 0.2                       # temperature parameter alpha determines the relative importance of the entropy term against the reward
+  automatic_entropy_tuning : True   # temperature parameter alpha automaically adjusted.
   seed : 456                        # random seed 
   batch_size : 256                  # batch size
   hidden_size : 256                 # hidden size
