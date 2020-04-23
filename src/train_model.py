@@ -579,7 +579,7 @@ def copyResultsToSaveRepo(computer, config_path):
     print('CopyResultsToSaveRepo()')
     if computer == 'mila':
         # Copying CNN model from local disck to save repo (tmp1/maivincent)
-        use_cnn_path = config_path[computer]['use_cnn_path']
+        use_cnn_path = config_path['use_cnn_path']
         save_cnn_path = config_path[computer]['save_cnn']
         ut.copyAndOverwrite(use_cnn_path, save_cnn_path)
         print("Copying results: done!")
