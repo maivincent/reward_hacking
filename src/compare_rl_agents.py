@@ -18,17 +18,17 @@ class Comparator(object):
 
 	def avg_std_for_env(self, path, mode):
 		path = os.path.join(path, mode)
-		list_runs = [os.path.join(path, file) for file in os.listdir(path) if os.path.isfile(os.path.join(path, file))]
+		list_runs_rewards = [os.path.join(path, file) for file in os.listdir(path) if (os.path.isfile(os.path.join(path, file)) and 'error' not in file and 'profit' not in file)]
 		rewards = np.array([])
 		success_rewards = np.array([])
 		episode_ids = np.array([])
-		number_runs = len(list_runs)
+		number_runs = len(list_runs_rewards)
 
 		nb_failed = 0
 		nb_success = 0
 		nb_unstable = 0
 
-		for run in list_runs:
+		for run in list_runs_rewards:
 			data = np.load(run)
 			# If it is the first time
 			if episode_ids.size == 0:
@@ -90,6 +90,30 @@ class Comparator(object):
 		# All average and std deviation
 		all_average = np.mean(rewards, 0)
 		all_std = np.std(rewards, 0)/np.sqrt(number_runs)
+
+		###### Profits and errors
+
+		list_runs_profit = [os.path.join(path, file) for file in os.listdir(path) if (os.path.isfile(os.path.join(path, file)) and 'profit' in file)]
+		list_runs_error = [os.path.join(path, file) for file in os.listdir(path) if (os.path.isfile(os.path.join(path, file)) and 'error' in file)]
+
+		print(list_runs_profit)
+		print(list_runs_error)
+
+		profits = np.array([])
+
+		for run in list_runs_profit:
+			data = np.load(run)
+			# If it is the first time
+			if episode_ids.size == 0:
+				episode_ids = data[:, 1]
+			# Double check that the episode ids are identical through the whole set of results
+			elif not np.array_equal(episode_ids, data[:, 1]):
+				raise ValueError("Different episode id among the different files. Before, we had until {}, now we go until {} with file {}".format(episode_ids[-1], data[-1, 1], run))
+
+			if rewards.size == 0:
+				rewards = np.array([data[:,0]])
+			else:
+				rewards = np.vstack((rewards, data[:, 0]))
 
 		return [number_runs, success_average, success_std, episode_ids, status, best_success_average, best_success_std, all_average, all_std]
 
