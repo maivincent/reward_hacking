@@ -38,7 +38,7 @@ class DTDistAngleObsWrapper(gym.Wrapper):
 		lane_pose = self.env.get_lane_pos2(self.env.cur_pos, self.env.cur_angle)
 		dist = lane_pose.dist        # Distance to lane center. Left is negative, right is positive.
 		angle = angleLimit(lane_pose.angle_rad)  # Angle from straight, in radians. Left is negative, right is positive.
-		observation = [dist, angle]
+		observation = np.array([dist, angle])
 		return observation
 
 	def step(self, action):
@@ -47,7 +47,7 @@ class DTDistAngleObsWrapper(gym.Wrapper):
 		lane_pose = self.env.get_lane_pos2(self.env.cur_pos, self.env.cur_angle)
 		dist = lane_pose.dist        # Distance to lane center. Left is negative, right is positive.
 		angle = angleLimit(lane_pose.angle_rad)  # Angle from straight, in radians. Left is negative, right is positive.
-		observation = [dist, angle]
+		observation = np.array([dist, angle])
 		return observation, reward, done, info
 
 	def render(self, mode):
