@@ -8,7 +8,7 @@ from pytorch_soft_actor_critic_CNN.model import GaussianPolicy, QNetwork, Determ
 
 class SAC(object):
     def __init__(self, num_inputs, action_space, args):
-
+        print('SAC_CNN initialized.')
         self.gamma = args.gamma
         self.tau = args.tau
         self.alpha = args.alpha

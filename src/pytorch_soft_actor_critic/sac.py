@@ -8,7 +8,7 @@ from pytorch_soft_actor_critic.model import GaussianPolicy, QNetwork, Determinis
 
 class SAC(object):
     def __init__(self, num_inputs, action_space, args):
-
+        print('Original SAC initialized.')
         self.gamma = args.gamma
         self.tau = args.tau
         self.alpha = args.alpha

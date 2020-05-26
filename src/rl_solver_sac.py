@@ -19,9 +19,10 @@ from rlkit.data_management.env_replay_buffer import EnvReplayBuffer
 from rlkit.envs.wrappers import NormalizedBoxEnv
 from rlkit.launchers.launcher_util import setup_logger
 from rlkit.samplers.data_collector import MdpPathCollector
-from rlkit.torch.sac.policies import TanhGaussianPolicy, MakeDeterministic
+from rlkit.torch.sac.policies import TanhGaussianPolicy, MakeDeterministic, CNNTanhGaussianPolicy
 from rlkit.torch.sac.sac import SACTrainer
 from rlkit.torch.networks import FlattenMlp
+from rlkit.torch.conv_networks import CNN
 from rlkit.torch.torch_rl_algorithm import TorchBatchRLAlgorithm
 
 
@@ -79,8 +80,6 @@ class SAC_Solver():
 		torch.manual_seed(self.seed)
 		np.random.seed(self.seed)
 		self.env.seed(self.seed)
-		print(self.env.observation_space.shape)
-		print(self.env.observation_space.shape[0])
 		if self.env_name not in ['DTC_GT_Reward']:
 			self.agent = SAC(self.env.observation_space.shape[0], self.env.action_space, self.sac_args)
 		else:
@@ -260,35 +259,107 @@ class rlkit_SAC_solver():
 	def __init__(self, variant, other_config):
 		expl_env = other_config['env']
 		eval_env = other_config['test_env']
+		if variant['env_name'] in ['DTC_GT_Reward'] and variant['test_env_name'] in ['duckietown_cam']:
+			self.net_type = 'CNN'
+		else:
+			self.net_type = 'FlattenMlp' 
 		obs_dim = expl_env.observation_space.low.size
 		action_dim = eval_env.action_space.low.size
 
-		M = variant['layer_size']
-		qf1 = FlattenMlp(
-			input_size=obs_dim + action_dim,
-			output_size=1,
-			hidden_sizes=[M, M],
-		)
-		qf2 = FlattenMlp(
-			input_size=obs_dim + action_dim,
-			output_size=1,
-			hidden_sizes=[M, M],
-		)
-		target_qf1 = FlattenMlp(
-			input_size=obs_dim + action_dim,
-			output_size=1,
-			hidden_sizes=[M, M],
-		)
-		target_qf2 = FlattenMlp(
-			input_size=obs_dim + action_dim,
-			output_size=1,
-			hidden_sizes=[M, M],
-		)
-		policy = TanhGaussianPolicy(
-			obs_dim=obs_dim,
-			action_dim=action_dim,
-			hidden_sizes=[M, M],
-		)
+		if self.net_type == 'FlattenMlp':
+			M = variant['layer_size']
+			qf1 = FlattenMlp(
+				input_size=obs_dim + action_dim,
+				output_size=1,
+				hidden_sizes=[M, M],
+			)
+			qf2 = FlattenMlp(
+				input_size=obs_dim + action_dim,
+				output_size=1,
+				hidden_sizes=[M, M],
+			)
+			target_qf1 = FlattenMlp(
+				input_size=obs_dim + action_dim,
+				output_size=1,
+				hidden_sizes=[M, M],
+			)
+			target_qf2 = FlattenMlp(
+				input_size=obs_dim + action_dim,
+				output_size=1,
+				hidden_sizes=[M, M],
+			)
+
+			policy = TanhGaussianPolicy(
+				obs_dim=obs_dim,
+				action_dim=action_dim,
+				hidden_sizes=[M, M],
+			)
+
+
+		elif self.net_type == 'CNN':
+			M = variant['layer_size']
+			qf1 = CNN(
+            	input_width = 40,
+            	input_height = 30,
+            	input_channels = 3,
+            	output_size = 1,
+            	kernel_sizes = [3, 3, 3],
+            	n_channels = [5, 5, 5],
+            	strides = [1, 1, 1],
+            	paddings = [1, 1, 1],
+            	hidden_sizes = [M, M],
+            	added_fc_input_size = action_dim
+			)
+			qf2 = CNN(
+            	input_width = 40,
+            	input_height = 30,
+            	input_channels = 3,
+            	output_size = 1,
+            	kernel_sizes = [3, 3, 3],
+            	n_channels = [5, 5, 5],
+            	strides = [1, 1, 1],
+            	paddings = [1, 1, 1],
+            	hidden_sizes = [M, M],
+            	added_fc_input_size = action_dim
+			)
+			target_qf1 = CNN(
+            	input_width = 40,
+            	input_height = 30,
+            	input_channels = 3,
+            	output_size = 1,
+            	kernel_sizes = [3, 3, 3],
+            	n_channels = [5, 5, 5],
+            	strides = [1, 1, 1],
+            	paddings = [1, 1, 1],
+            	hidden_sizes = [M, M],
+            	added_fc_input_size = action_dim
+			)
+			target_qf2 = CNN(
+            	input_width = 40,
+            	input_height = 30,
+            	input_channels = 3,
+            	output_size = 1,
+            	kernel_sizes = [3, 3, 3],
+            	n_channels = [5, 5, 5],
+            	strides = [1, 1, 1],
+            	paddings = [1, 1, 1],
+            	hidden_sizes = [M, M],
+            	added_fc_input_size = action_dim
+			)
+
+			policy = CNNTanhGaussianPolicy(
+            	input_width = 40,
+            	input_height = 30,
+            	input_channels = 3,
+            	output_size = action_dim,
+            	kernel_sizes = [3, 3, 3],
+            	n_channels = [5, 5, 5],
+            	strides = [1, 1, 1],
+            	paddings = [1, 1, 1],
+            	hidden_sizes = [M, M]
+			)
+
+
 		eval_policy = MakeDeterministic(policy)
 		eval_path_collector = MdpPathCollector(
 			eval_env,
@@ -572,12 +643,13 @@ if __name__ == '__main__':
 	
 	##### Duckietown Cam
 	elif env_name == 'DTC_GT_Reward':
-		env = DTConstantVelWrapper(DTLaneFollowingRewardWrapper(DuckietownEnv()))
-		env = ResizeWrapper(env)
+		env = DuckietownEnv()
+		env = DTLaneFollowingRewardWrapper(env)
+		env = DTConstantVelWrapper(env)
+		env = ResizeWrapper(env, shape = (30, 40, 3))
 		env = NormalizeWrapper(env)
 		env = ImgWrapper(env) # to make the images from 160x120x3 into 3x160x120
 		env = GTDenseRewardInfoWrapperDT(env)
-		print(env.observation_space)
 	##### Others
 #	elif env_name == 'HalfCheetah-v2':
 #		env = env = gym.make('HalfCheetah-v2')
@@ -603,7 +675,14 @@ if __name__ == '__main__':
 			test_env = DTConstantVelWrapper(test_env)
 			test_env = GTDenseRewardInfoWrapperDT(test_env)
 		elif test_env_name == 'duckietown_cam':
-			test_env = DTConstantVelWrapper(DTLaneFollowingRewardWrapper(DTDroneImageGenerator(DuckietownEnv())))#DTLaneFollowingRewardWrapper(DuckietownEnv())#
+			test_env = DuckietownEnv()
+			test_env = DTLaneFollowingRewardWrapper(test_env)
+			test_env = DTConstantVelWrapper(test_env)
+			test_env = ResizeWrapper(test_env, shape = (30, 40, 3))
+			test_env = NormalizeWrapper(test_env)
+			test_env = ImgWrapper(test_env) # to make the images from 160x120x3 into 3x160x120
+			test_env = GTDenseRewardInfoWrapperDT(test_env)
+
 		else:
 			raise ValueError('Test Environment name {} is unknown or unexpected (should be CP_GT_Reward).'.format(env_name))
 
@@ -615,18 +694,19 @@ if __name__ == '__main__':
 	# noinspection PyTypeChecker
 	variant = dict(
 		env_name = env_name,
+		test_env_name = test_env_name,
 		algorithm="SAC",
 		version="normal",
 		layer_size=256,
-		replay_buffer_size=int(1E6),
+		replay_buffer_size=int(5E4),
 		algorithm_kwargs=dict(
 			num_epochs=50,
 			num_eval_steps_per_epoch=5000,
-			num_trains_per_train_loop=1000,
-			num_expl_steps_per_train_loop=1000,
-			min_num_steps_before_training=100,
+			num_trains_per_train_loop=10000,
+			num_expl_steps_per_train_loop=10000,
+			min_num_steps_before_training=10000,
 			max_path_length=1000,
-			batch_size=256,
+			batch_size=128,
 		),
 		trainer_kwargs=dict(
 			discount=0.99,
