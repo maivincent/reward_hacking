@@ -706,7 +706,7 @@ if __name__ == '__main__':
 			num_expl_steps_per_train_loop=10000,
 			min_num_steps_before_training=10000,
 			max_path_length=1000,
-			batch_size=128,
+			batch_size=512,
 		),
 		trainer_kwargs=dict(
 			discount=0.99,
