@@ -728,6 +728,9 @@ if __name__ == '__main__':
 	trainer = rlkit_SAC_solver(variant, other_config) 
 	trainer.train()
 
+
+
+	## Old SAC_Solver (to keep so that we can reproduce older results)
 	#trainer = SAC_Solver(env, test_env, config_path, config['rl'])#env_name = 'CartPole-v0')
 	#print("Initialized trainer")
 

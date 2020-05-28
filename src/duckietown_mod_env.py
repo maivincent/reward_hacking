@@ -1,4 +1,4 @@
-from gym_duckietown.simulator import Simulator
+from gym_duckietown.simulator import Simulator, NotInLane
 from gym_duckietown.wrappers import *
 from gym_duckietown.envs.duckietown_env import DuckietownEnv
 
