@@ -7,10 +7,24 @@ import itertools
 import torch
 from typing import NamedTuple
 from pytorch_soft_actor_critic.sac import SAC
-from tensorboardX import SummaryWriter
+from pytorch_soft_actor_critic_CNN.sac import SAC as SAC_CNN
 from pytorch_soft_actor_critic.replay_memory import ReplayMemory
+from tensorboardX import SummaryWriter
 import utils as ut
 import sys
+
+
+import rlkit.torch.pytorch_util as ptu
+from rlkit.data_management.env_replay_buffer import EnvReplayBuffer
+from rlkit.envs.wrappers import NormalizedBoxEnv
+from rlkit.launchers.launcher_util import setup_logger
+from rlkit.samplers.data_collector import MdpPathCollector
+from rlkit.torch.sac.policies import TanhGaussianPolicy, MakeDeterministic, CNNTanhGaussianPolicy
+from rlkit.torch.sac.sac import SACTrainer
+from rlkit.torch.networks import FlattenMlp
+from rlkit.torch.conv_networks import CNN
+from rlkit.torch.torch_rl_algorithm import TorchBatchRLAlgorithm
+
 
 
 class SAC_args(NamedTuple):
@@ -66,9 +80,10 @@ class SAC_Solver():
 		torch.manual_seed(self.seed)
 		np.random.seed(self.seed)
 		self.env.seed(self.seed)
-		print(self.env.observation_space.shape)
-		print(self.env.observation_space.shape[0])
-		self.agent = SAC(self.env.observation_space.shape[0], self.env.action_space, self.sac_args)
+		if self.env_name not in ['DTC_GT_Reward']:
+			self.agent = SAC(self.env.observation_space.shape[0], self.env.action_space, self.sac_args)
+		else:
+			self.agent = SAC_CNN(self.env.observation_space.shape[0], self.env.action_space, self.sac_args)
 
 		### Path parameters
 		self.training_data_path = config_path['training_data_path']
@@ -238,6 +253,150 @@ class SAC_Solver():
 		np.save(self.train_res_path, self.reward_mem)
 		np.save(self.train_rew_profit_path, self.reward_profit_mem)
 		np.save(self.train_rew_error_path, self.reward_profit_mem)
+
+
+class rlkit_SAC_solver():
+	def __init__(self, variant, other_config):
+		expl_env = other_config['env']
+		eval_env = other_config['test_env']
+		if variant['env_name'] in ['DTC_GT_Reward'] and variant['test_env_name'] in ['duckietown_cam']:
+			self.net_type = 'CNN'
+		else:
+			self.net_type = 'FlattenMlp' 
+		obs_dim = expl_env.observation_space.low.size
+		action_dim = eval_env.action_space.low.size
+
+		if self.net_type == 'FlattenMlp':
+			M = variant['layer_size']
+			qf1 = FlattenMlp(
+				input_size=obs_dim + action_dim,
+				output_size=1,
+				hidden_sizes=[M, M],
+			)
+			qf2 = FlattenMlp(
+				input_size=obs_dim + action_dim,
+				output_size=1,
+				hidden_sizes=[M, M],
+			)
+			target_qf1 = FlattenMlp(
+				input_size=obs_dim + action_dim,
+				output_size=1,
+				hidden_sizes=[M, M],
+			)
+			target_qf2 = FlattenMlp(
+				input_size=obs_dim + action_dim,
+				output_size=1,
+				hidden_sizes=[M, M],
+			)
+
+			policy = TanhGaussianPolicy(
+				obs_dim=obs_dim,
+				action_dim=action_dim,
+				hidden_sizes=[M, M],
+			)
+
+
+		elif self.net_type == 'CNN':
+			M = variant['layer_size']
+			qf1 = CNN(
+            	input_width = 40,
+            	input_height = 30,
+            	input_channels = 3,
+            	output_size = 1,
+            	kernel_sizes = [3, 3, 3],
+            	n_channels = [5, 5, 5],
+            	strides = [1, 1, 1],
+            	paddings = [1, 1, 1],
+            	hidden_sizes = [M, M],
+            	added_fc_input_size = action_dim
+			)
+			qf2 = CNN(
+            	input_width = 40,
+            	input_height = 30,
+            	input_channels = 3,
+            	output_size = 1,
+            	kernel_sizes = [3, 3, 3],
+            	n_channels = [5, 5, 5],
+            	strides = [1, 1, 1],
+            	paddings = [1, 1, 1],
+            	hidden_sizes = [M, M],
+            	added_fc_input_size = action_dim
+			)
+			target_qf1 = CNN(
+            	input_width = 40,
+            	input_height = 30,
+            	input_channels = 3,
+            	output_size = 1,
+            	kernel_sizes = [3, 3, 3],
+            	n_channels = [5, 5, 5],
+            	strides = [1, 1, 1],
+            	paddings = [1, 1, 1],
+            	hidden_sizes = [M, M],
+            	added_fc_input_size = action_dim
+			)
+			target_qf2 = CNN(
+            	input_width = 40,
+            	input_height = 30,
+            	input_channels = 3,
+            	output_size = 1,
+            	kernel_sizes = [3, 3, 3],
+            	n_channels = [5, 5, 5],
+            	strides = [1, 1, 1],
+            	paddings = [1, 1, 1],
+            	hidden_sizes = [M, M],
+            	added_fc_input_size = action_dim
+			)
+
+			policy = CNNTanhGaussianPolicy(
+            	input_width = 40,
+            	input_height = 30,
+            	input_channels = 3,
+            	output_size = action_dim,
+            	kernel_sizes = [3, 3, 3],
+            	n_channels = [5, 5, 5],
+            	strides = [1, 1, 1],
+            	paddings = [1, 1, 1],
+            	hidden_sizes = [M, M]
+			)
+
+
+		eval_policy = MakeDeterministic(policy)
+		eval_path_collector = MdpPathCollector(
+			eval_env,
+			eval_policy,
+		)
+		expl_path_collector = MdpPathCollector(
+			expl_env,
+			policy,
+		)
+		replay_buffer = EnvReplayBuffer(
+			variant['replay_buffer_size'],
+			expl_env,
+		)
+		trainer = SACTrainer(
+			env=eval_env,
+			policy=policy,
+			qf1=qf1,
+			qf2=qf2,
+			target_qf1=target_qf1,
+			target_qf2=target_qf2,
+			**variant['trainer_kwargs']
+		)
+		self.algorithm = TorchBatchRLAlgorithm(
+			trainer=trainer,
+			exploration_env=expl_env,
+			evaluation_env=eval_env,
+			exploration_data_collector=expl_path_collector,
+			evaluation_data_collector=eval_path_collector,
+			replay_buffer=replay_buffer,
+			**variant['algorithm_kwargs']
+		)
+		self.algorithm.to(ptu.device)
+	
+	def train(self):
+		self.algorithm.train() 
+
+
 
 
 if __name__ == '__main__':
@@ -484,12 +643,13 @@ if __name__ == '__main__':
 	
 	##### Duckietown Cam
 	elif env_name == 'DTC_GT_Reward':
-		env = DTConstantVelWrapper(DTLaneFollowingRewardWrapper(DuckietownEnv()))
-		env = ResizeWrapper(env)
+		env = DuckietownEnv()
+		env = DTLaneFollowingRewardWrapper(env)
+		env = DTConstantVelWrapper(env)
+		env = ResizeWrapper(env, shape = (30, 40, 3))
 		env = NormalizeWrapper(env)
 		env = ImgWrapper(env) # to make the images from 160x120x3 into 3x160x120
 		env = GTDenseRewardInfoWrapperDT(env)
-		print(env.observation_space)
 	##### Others
 #	elif env_name == 'HalfCheetah-v2':
 #		env = env = gym.make('HalfCheetah-v2')
@@ -515,15 +675,67 @@ if __name__ == '__main__':
 			test_env = DTConstantVelWrapper(test_env)
 			test_env = GTDenseRewardInfoWrapperDT(test_env)
 		elif test_env_name == 'duckietown_cam':
-			test_env = DTConstantVelWrapper(DTLaneFollowingRewardWrapper(DTDroneImageGenerator(DuckietownEnv())))#DTLaneFollowingRewardWrapper(DuckietownEnv())#
+			test_env = DuckietownEnv()
+			test_env = DTLaneFollowingRewardWrapper(test_env)
+			test_env = DTConstantVelWrapper(test_env)
+			test_env = ResizeWrapper(test_env, shape = (30, 40, 3))
+			test_env = NormalizeWrapper(test_env)
+			test_env = ImgWrapper(test_env) # to make the images from 160x120x3 into 3x160x120
+			test_env = GTDenseRewardInfoWrapperDT(test_env)
+
 		else:
 			raise ValueError('Test Environment name {} is unknown or unexpected (should be CP_GT_Reward).'.format(env_name))
 
-	trainer = SAC_Solver(env, test_env, config_path, config['rl'])#env_name = 'CartPole-v0')
-	print("Initialized trainer")
 
+
+
+	###################### Trying from there
+
+	# noinspection PyTypeChecker
+	variant = dict(
+		env_name = env_name,
+		test_env_name = test_env_name,
+		algorithm="SAC",
+		version="normal",
+		layer_size=256,
+		replay_buffer_size=int(5E4),
+		algorithm_kwargs=dict(
+			num_epochs=50,
+			num_eval_steps_per_epoch=5000,
+			num_trains_per_train_loop=10000,
+			num_expl_steps_per_train_loop=10000,
+			min_num_steps_before_training=10000,
+			max_path_length=1000,
+			batch_size=512,
+		),
+		trainer_kwargs=dict(
+			discount=0.99,
+			soft_target_tau=5e-3,
+			target_update_period=1,
+			policy_lr=3E-4,
+			qf_lr=3E-4,
+			reward_scale=1,
+			use_automatic_entropy_tuning=True,
+		),
+	)
+	other_config = dict(
+		env = env,
+		test_env = test_env
+		)
+	setup_logger(exp_name, variant=variant)
+	ptu.set_gpu_mode(True)  # optionally set the GPU (default=False)
+	# experiment(variant)
+	trainer = rlkit_SAC_solver(variant, other_config) 
 	trainer.train()
-	trainer.save()
+
+
+
+	## Old SAC_Solver (to keep so that we can reproduce older results)
+	#trainer = SAC_Solver(env, test_env, config_path, config['rl'])#env_name = 'CartPole-v0')
+	#print("Initialized trainer")
+
+	#trainer.train()
+	#trainer.save()
 
 	### Copying results to save repo
 	if computer == 'mila':

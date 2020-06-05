@@ -1,3 +1,6 @@
 [submodule "gym-duckietown"]
 	path = gym-duckietown
 	url = https://github.com/maivincent/gym-duckietown.git
+[submodule "rlkit"]
+	path = rlkit
+	url = https://github.com/vitchyr/rlkit.git

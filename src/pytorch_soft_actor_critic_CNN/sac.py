@@ -2,13 +2,13 @@ import os
 import torch
 import torch.nn.functional as F
 from torch.optim import Adam
-from pytorch_soft_actor_critic.sac_utils import soft_update, hard_update
-from pytorch_soft_actor_critic.model import GaussianPolicy, QNetwork, DeterministicPolicy
+from pytorch_soft_actor_critic_CNN.sac_utils import soft_update, hard_update
+from pytorch_soft_actor_critic_CNN.model import GaussianPolicy, QNetwork, DeterministicPolicy
 
 
 class SAC(object):
     def __init__(self, num_inputs, action_space, args):
-        print('Original SAC initialized.')
+        print('SAC_CNN initialized.')
         self.gamma = args.gamma
         self.tau = args.tau
         self.alpha = args.alpha

@@ -21,7 +21,7 @@ class Comparator(object):
 		list_runs_rewards = [os.path.join(path, file) for file in os.listdir(path) if (os.path.isfile(os.path.join(path, file)) and 'error' not in file and 'profit' not in file)]
 		rewards = np.array([])
 		success_rewards = np.array([])
-		episode_ids = np.array([])
+		nb_steps = np.array([])
 		number_runs = len(list_runs_rewards)
 
 		nb_failed = 0
@@ -31,11 +31,11 @@ class Comparator(object):
 		for run in list_runs_rewards:
 			data = np.load(run)
 			# If it is the first time
-			if episode_ids.size == 0:
-				episode_ids = data[:, 1]
-			# Double check that the episode ids are identical through the whole set of results
-			elif not np.array_equal(episode_ids, data[:, 1]):
-				raise ValueError("Different episode id among the different files. Before, we had until {}, now we go until {} with file {}".format(episode_ids[-1], data[-1, 1], run))
+			if nb_steps.size == 0:
+				nb_steps = data[:, 1]
+			# Double check that the nb_steps are identical through the whole set of results
+			elif not np.array_equal(nb_steps, data[:, 1]):
+				raise ValueError("Different nb steps among the different files. Before, we had until {}, now we go until {} with file {}".format(nb_steps[-1], data[-1, 1], run))
 
 			if rewards.size == 0:
 				rewards = np.array([data[:,0]])
@@ -43,31 +43,41 @@ class Comparator(object):
 				rewards = np.vstack((rewards, data[:, 0]))
 			#print(run)
 
-		# Testing and categorizing
-		max_reward = np.max(rewards)
-		rew_thresh = 0.7*max_reward			# Threshold of success is 70% of max reward on the environment
-		high_avg_thresh = 0.85*max_reward		# High average (needed to be a success)
-		low_avg_thresh = 0.5*max_reward		# Low average (needed to be "unstable")
-		print(rewards.shape)
-		nb_episodes = rewards.shape[1]
-		start_period = int(nb_episodes*0.90) 	# Start of period of interest
 
-		# Categorizing
-		for run in rewards:
-			if np.max(run) < rew_thresh or np.mean(run[start_period:-1]) < low_avg_thresh:   # Fail if never reached 70% of the max score
-				cat = 'fail'
-				nb_failed += 1
-			elif np.min(run[start_period:-1]) < rew_thresh and np.mean(run[start_period:-1]) < high_avg_thresh:
-				cat = 'unstable'			# Unstable if, in the last 15% of episodes, at least one is lower than 70% of max score and average is lower than 90% of max score (to prevent labeled as unstable in case there is only one drop)
-				nb_unstable += 1
-			else:
-				cat = 'success'				# Stable otherwise (no lower than 70% of max score or average higher than 85% of max score on last 85%)
-				nb_success += 1
-				if success_rewards.size == 0:
-					success_rewards = run.reshape((1,-1))
+
+		# Testing and categorizing
+		print('rewards: {}'.format(rewards))
+
+
+		if number_runs == 1:
+			status = [1, 0, 0]
+			success_rewards = rewards
+
+		else:
+
+			max_reward = np.max(rewards)
+			rew_thresh = 0.7*max_reward			# Threshold of success is 70% of max reward on the environment
+			high_avg_thresh = 0.85*max_reward		# High average (needed to be a success)
+			low_avg_thresh = 0.5*max_reward		# Low average (needed to be "unstable")
+			nb_epochs = rewards.shape[1]
+			start_period = int(nb_epochs*0.90) 	# Start of period of interest
+
+			# Categorizing
+			for run in rewards:
+				if np.max(run) < rew_thresh or np.mean(run[start_period:-1]) < low_avg_thresh:   # Fail if never reached 70% of the max score
+					cat = 'fail'
+					nb_failed += 1
+				elif np.min(run[start_period:-1]) < rew_thresh and np.mean(run[start_period:-1]) < high_avg_thresh:
+					cat = 'unstable'			# Unstable if, in the last 15% of epochs, at least one is lower than 70% of max score and average is lower than 90% of max score (to prevent labeled as unstable in case there is only one drop)
+					nb_unstable += 1
 				else:
-					success_rewards = np.vstack((success_rewards, run))
-		status = [nb_success, nb_unstable, nb_failed]
+					cat = 'success'				# Stable otherwise (no lower than 70% of max score or average higher than 85% of max score on last 85%)
+					nb_success += 1
+					if success_rewards.size == 0:
+						success_rewards = run.reshape((1,-1))
+					else:
+						success_rewards = np.vstack((success_rewards, run))
+			status = [nb_success, nb_unstable, nb_failed]
 
 		if len(success_rewards) != 0:
 			# Successful ones average and std deviation
@@ -104,18 +114,18 @@ class Comparator(object):
 		for run in list_runs_profit:
 			data = np.load(run)
 			# If it is the first time
-			if episode_ids.size == 0:
-				episode_ids = data[:, 1]
-			# Double check that the episode ids are identical through the whole set of results
-			elif not np.array_equal(episode_ids, data[:, 1]):
-				raise ValueError("Different episode id among the different files. Before, we had until {}, now we go until {} with file {}".format(episode_ids[-1], data[-1, 1], run))
+			if nb_steps.size == 0:
+				nb_steps = data[:, 1]
+			# Double check that the nb_steps are identical through the whole set of results
+			elif not np.array_equal(nb_steps, data[:, 1]):
+				raise ValueError("Different nb_steps among the different files. Before, we had until {}, now we go until {} with file {}".format(nb_steps[-1], data[-1, 1], run))
 
 			if rewards.size == 0:
 				rewards = np.array([data[:,0]])
 			else:
 				rewards = np.vstack((rewards, data[:, 0]))
 
-		return [number_runs, success_average, success_std, episode_ids, status, best_success_average, best_success_std, all_average, all_std]
+		return [number_runs, success_average, success_std, nb_steps, status, best_success_average, best_success_std, all_average, all_std]
 
 	def plot(self, envs_list):
 		# Test results	
@@ -125,15 +135,15 @@ class Comparator(object):
 		y_list = []
 		std_list = []
 		legend = []
-		x_label = 'Training episodes'
-		y_label = 'Average score on 10 test episodes'
+		x_label = 'Training steps'
+		y_label = 'Average episode score (averaged over 5000 training steps)'
 		for test_result in self.test_results:
 			x_list.append(test_result[1][3])
 			y_list.append(test_result[1][7])
 			std_list.append(test_result[1][8])
 			result_leg = '{} - averaged on {} runs'.format(test_result[0], test_result[1][0])
 			legend.append(result_leg)
-		graph_title = 'SAC test performance with different sources of reward for all runs'
+		graph_title = 'SAC test performance with different sources of reward for all runs.'
 		graph_save_name = 'SAC_test_all_' + envs_list
 		self.drawer.saveMultiXPlotWithStdPNG(x_list, y_list, std_list, x_label, y_label, graph_title, graph_save_name, legend)
 
@@ -143,15 +153,15 @@ class Comparator(object):
 		y_list = []
 		std_list = []
 		legend = []
-		x_label = 'Training episodes'
-		y_label = 'Average score on 10 test episodes'
+		x_label = 'Training steps'
+		y_label = 'Average score on episodes (averaged over 5000 training steps)'
 		for test_result in self.test_results:
 			x_list.append(test_result[1][3])
 			y_list.append(test_result[1][1])
 			std_list.append(test_result[1][2])
 			result_leg = '{} - averaged on {} runs'.format(test_result[0], test_result[1][4][0])
 			legend.append(result_leg)
-		graph_title = 'SAC test performance with different sources of reward for successful runs'
+		graph_title = 'SAC test performance with different sources of reward for successful runs.'
 		graph_save_name = 'SAC_test_success_' + envs_list
 		self.drawer.saveMultiXPlotWithStdPNG(x_list, y_list, std_list, x_label, y_label, graph_title, graph_save_name, legend)
 
@@ -184,7 +194,7 @@ class Comparator(object):
 		y_list = []
 		std_list = []
 		legend = []
-		x_label = 'Training episodes'
+		x_label = 'Training steps'
 		y_label = 'Average score on training episodes'
 		for train_result in self.train_results:
 			x_list.append(train_result[1][3])
@@ -200,7 +210,7 @@ class Comparator(object):
 		y_list = []
 		std_list = []
 		legend = []
-		x_label = 'Training episodes'
+		x_label = 'Training steps'
 		y_label = 'Average score on training episodes'
 		for train_result in self.train_results:
 			x_list.append(train_result[1][3])

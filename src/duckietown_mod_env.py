@@ -1,4 +1,4 @@
-from gym_duckietown.simulator import Simulator
+from gym_duckietown.simulator import Simulator, NotInLane
 from gym_duckietown.wrappers import *
 from gym_duckietown.envs.duckietown_env import DuckietownEnv
 
@@ -38,7 +38,7 @@ class DTDistAngleObsWrapper(gym.Wrapper):
 		lane_pose = self.env.get_lane_pos2(self.env.cur_pos, self.env.cur_angle)
 		dist = lane_pose.dist        # Distance to lane center. Left is negative, right is positive.
 		angle = angleLimit(lane_pose.angle_rad)  # Angle from straight, in radians. Left is negative, right is positive.
-		observation = [dist, angle]
+		observation = np.array([dist, angle])
 		return observation
 
 	def step(self, action):
@@ -47,7 +47,7 @@ class DTDistAngleObsWrapper(gym.Wrapper):
 		lane_pose = self.env.get_lane_pos2(self.env.cur_pos, self.env.cur_angle)
 		dist = lane_pose.dist        # Distance to lane center. Left is negative, right is positive.
 		angle = angleLimit(lane_pose.angle_rad)  # Angle from straight, in radians. Left is negative, right is positive.
-		observation = [dist, angle]
+		observation = np.array([dist, angle])
 		return observation, reward, done, info
 
 	def render(self, mode):
@@ -57,7 +57,10 @@ class DTLaneFollowingRewardWrapper(gym.Wrapper):
 	def step(self, action):
 		observation, reward, done, info = self.env.step(action)
 		 # Getting the pose
-		lane_pose = self.env.get_lane_pos2(self.env.cur_pos, self.env.cur_angle)
+		try:
+			lane_pose = self.env.get_lane_pos2(self.env.cur_pos, self.env.cur_angle)
+		except NotInLane:
+			reward = -1.0
 		dist = lane_pose.dist        # Distance to lane center. Left is negative, right is positive.
 		angle = angleLimit(lane_pose.angle_rad)  # Angle from straight, in radians. Left is negative, right is positive.
 		reward = self.reward([dist, angle])
