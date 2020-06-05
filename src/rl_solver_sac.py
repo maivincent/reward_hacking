@@ -722,7 +722,7 @@ if __name__ == '__main__':
 		env = env,
 		test_env = test_env
 		)
-	setup_logger('name-of-experiment', variant=variant)
+	setup_logger(exp_name, variant=variant)
 	ptu.set_gpu_mode(True)  # optionally set the GPU (default=False)
 	# experiment(variant)
 	trainer = rlkit_SAC_solver(variant, other_config) 
